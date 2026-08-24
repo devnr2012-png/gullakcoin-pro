@@ -8,7 +8,7 @@ import time
 # --- PAGE SETUP ---
 st.set_page_config(page_title="GullakCoin Pro", page_icon="🪙", layout="wide")
 
-# --- CUSTOM CSS (Black Tab Backgrounds & Bright Green Typography) ---
+# --- CUSTOM CSS (Clean Interface without Top Box & Black Tabs) ---
 st.markdown("""
 <style>
     /* Global App Background & High Contrast Text */
@@ -73,36 +73,6 @@ st.markdown("""
         backdrop-filter: blur(16px);
         padding: 40px; border-radius: 20px; border: 1px solid #10b981;
         box-shadow: 0 25px 50px rgba(0, 0, 0, 0.7); max-width: 520px; margin: 0 auto;
-    }
-    
-    /* Natural Plant Watering & Growth Image Banner Box */
-    .plant-watering-banner {
-        background: linear-gradient(rgba(4, 47, 34, 0.6), rgba(4, 47, 34, 0.6)), 
-                    url('https://images.unsplash.com/photo-1530836369250-ef72a3f5cda8?auto=format&fit=crop&w=1000&q=80');
-        background-size: cover;
-        background-position: center;
-        border: 2px solid #34d399;
-        padding: 25px 20px;
-        border-radius: 16px;
-        text-align: center;
-        max-width: 520px;
-        margin: 0 auto 20px auto;
-        box-shadow: 0 10px 30px rgba(52, 211, 153, 0.3);
-    }
-    .banner-title {
-        font-size: 14px;
-        text-transform: uppercase;
-        letter-spacing: 2px;
-        color: #34d399;
-        font-weight: 900;
-        margin-bottom: 6px;
-        text-shadow: 0 2px 4px rgba(0,0,0,0.8);
-    }
-    .banner-text {
-        font-size: 18px;
-        font-weight: 700;
-        color: #ffffff;
-        text-shadow: 0 2px 6px rgba(0,0,0,0.9);
     }
 
     .logo-container { text-align: center; margin-bottom: 20px; }
@@ -238,23 +208,6 @@ if 'forgot_user' not in st.session_state: st.session_state.forgot_user = ""
 # --- AUTHENTICATION SCREEN ---
 if not st.session_state.logged_in:
     st.write("")
-    
-    # PLANT WATERING & WEALTH GROWTH BANNER
-    plans_list = [
-        "🌱 GullakCoin Seed (Target: ₹ 5,000) - Water your small savings to sprout fruitful returns!",
-        "🌿 GullakCoin Growth (Target: ₹ 25,000) - Nurture your wealth with dynamic venture allocations.",
-        "🌳 GullakCoin Plus (Target: ₹ 50,000) - Advanced mid-stage capital branching out securely.",
-        "🌲 GullakCoin Superplus (Target: ₹ 100,000) - Maximum institutional tree growth & robust yield."
-    ]
-    active_flash = plans_list[int(time.time()) % len(plans_list)]
-    
-    st.markdown(f"""
-        <div class="plant-watering-banner">
-            <div class="banner-title">🌱 Nurturing Your Wealth (Planting Seeds of Success)</div>
-            <div class="banner-text">{active_flash}</div>
-        </div>
-    """, unsafe_allow_html=True)
-    
     st.markdown("<div class='auth-container'>", unsafe_allow_html=True)
     st.markdown("""
         <div class="logo-container">
