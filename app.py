@@ -8,57 +8,63 @@ import time
 # --- PAGE SETUP ---
 st.set_page_config(page_title="GullakCoin Pro", page_icon="🪙", layout="wide")
 
-# --- CUSTOM CSS ---
+# --- CUSTOM CSS (High Contrast & Clear Visibility) ---
 st.markdown("""
 <style>
-    .stApp { background-color: #080a0f; color: #ffffff; font-family: 'Inter', sans-serif; }
-    [data-testid="stSidebar"] { background-color: #030407; border-right: 1px solid #1f242d; }
-    [data-testid="stMetricValue"] { font-size: 24px; color: #00e676; }
+    /* Global App Background & Text */
+    .stApp { background-color: #0b0f19; color: #f8fafc; font-family: 'Inter', sans-serif; }
+    [data-testid="stSidebar"] { background-color: #05070c; border-right: 1px solid #1e293b; }
+    [data-testid="stMetricValue"] { font-size: 24px; color: #00ff88 !important; font-weight: 700; }
+    
+    /* Input Fields Visibility */
+    .stTextInput input, .stSelectbox select {
+        background-color: #1e293b !important; color: #ffffff !important; border: 1px solid #475569 !important; border-radius: 8px;
+    }
     
     .auth-container {
-        background: linear-gradient(135deg, rgba(26, 28, 35, 0.7), rgba(13, 15, 20, 0.9));
-        padding: 40px; border-radius: 20px; border: 1px solid rgba(255, 153, 0, 0.2);
-        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6); max-width: 480px; margin: 0 auto; backdrop-filter: blur(10px);
+        background: #111827;
+        padding: 40px; border-radius: 20px; border: 1px solid rgba(0, 255, 136, 0.3);
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.8); max-width: 480px; margin: 0 auto;
     }
     .logo-container { text-align: center; margin-bottom: 25px; }
     .logo-badge {
-        display: inline-block; background: linear-gradient(135deg, #ff9900, #ff5722); color: #000;
+        display: inline-block; background: linear-gradient(135deg, #00ff88, #00b4d8); color: #0b0f19;
         font-weight: 900; font-size: 28px; padding: 12px 20px; border-radius: 16px;
-        box-shadow: 0 8px 20px rgba(255, 153, 0, 0.3); letter-spacing: 1px;
+        box-shadow: 0 8px 20px rgba(0, 255, 136, 0.3); letter-spacing: 1px;
     }
     .brand-title { font-size: 28px; font-weight: 800; color: #ffffff; margin-top: 15px; }
-    .brand-tagline { font-size: 13px; color: #8c92a4; margin-top: 5px; font-style: italic; }
+    .brand-tagline { font-size: 13px; color: #94a3b8; margin-top: 5px; font-style: italic; }
     
     .plan-card {
-        background-color: #12161f; padding: 25px; border-radius: 15px; border: 1px solid #1f242d;
+        background-color: #161e2e; padding: 25px; border-radius: 15px; border: 1px solid #334155;
         height: 220px; display: flex; flex-direction: column; justify-content: flex-start; margin-bottom: 10px;
     }
     .detail-card {
-        background-color: #12161f; padding: 20px; border-radius: 10px; border: 1px solid #ff9900;
+        background-color: #161e2e; padding: 20px; border-radius: 10px; border: 1px solid #00ff88;
         text-align: center; margin-top: 15px; margin-bottom: 15px;
     }
-    .plan-title { font-size: 22px; font-weight: bold; margin-bottom: 10px; color: white;}
-    .plan-desc { font-size: 13px; color: #8c92a4; margin-bottom: 15px; line-height: 1.5; }
-    .plan-target { font-size: 20px; font-weight: bold; color: #00e676; margin-top: auto; }
-    .disclaimer { font-size: 11px; color: #ff5252; font-style: italic; }
+    .plan-title { font-size: 22px; font-weight: bold; margin-bottom: 10px; color: #ffffff;}
+    .plan-desc { font-size: 13px; color: #cbd5e1; margin-bottom: 15px; line-height: 1.5; }
+    .plan-target { font-size: 20px; font-weight: bold; color: #00ff88; margin-top: auto; }
+    .disclaimer { font-size: 11px; color: #f87171; font-style: italic; }
     .locked-box {
-        background-color: #1a1612; border: 1px solid #ff9900; padding: 20px; border-radius: 10px; text-align: center; margin-top: 20px;
+        background-color: #1e1b18; border: 1px solid #fbbf24; padding: 20px; border-radius: 10px; text-align: center; margin-top: 20px; color: #fef3c7;
     }
     .strict-rule-box {
-        background-color: rgba(255, 82, 82, 0.1); border: 1px solid #ff5252; padding: 15px; border-radius: 8px; color: #ff8a80; font-size: 13px; margin-bottom: 20px;
+        background-color: rgba(248, 113, 113, 0.1); border: 1px solid #f87171; padding: 15px; border-radius: 8px; color: #fca5a5; font-size: 13px; margin-bottom: 20px;
     }
     .comparison-box {
-        background-color: rgba(0, 230, 118, 0.08); border: 1px solid #00e676; padding: 15px; border-radius: 8px; color: #e0f2f1; font-size: 13px; margin-bottom: 20px;
+        background-color: rgba(0, 255, 136, 0.08); border: 1px solid #00ff88; padding: 15px; border-radius: 8px; color: #e2e8f0; font-size: 13px; margin-bottom: 20px;
     }
     .alert-failed {
-        background-color: rgba(255, 82, 82, 0.15); border: 1px solid #ff5252; padding: 15px; border-radius: 8px; color: #ff5252; margin-bottom: 15px;
+        background-color: rgba(248, 113, 113, 0.15); border: 1px solid #f87171; padding: 15px; border-radius: 8px; color: #f87171; margin-bottom: 15px;
     }
     .support-card {
-        background-color: #12161f; padding: 20px; border-radius: 12px; border: 1px solid #1f242d; text-align: center;
+        background-color: #161e2e; padding: 20px; border-radius: 12px; border: 1px solid #334155; text-align: center;
     }
     .gamification-box {
-        background: linear-gradient(135deg, rgba(255, 153, 0, 0.1), rgba(0, 230, 118, 0.1));
-        border: 1px solid rgba(255, 153, 0, 0.4); padding: 20px; border-radius: 15px; margin-bottom: 20px;
+        background: linear-gradient(135deg, rgba(251, 191, 36, 0.1), rgba(0, 255, 136, 0.1));
+        border: 1px solid rgba(251, 191, 36, 0.4); padding: 20px; border-radius: 15px; margin-bottom: 20px; color: #f8fafc;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -236,7 +242,6 @@ else:
         elif 'Weekly' in freq: roi = 0.10
         else: roi = 0.18
         
-        # AI Streak Yield Boost (Adding +0.5% bonus if streak is active)
         success_tx_count = len(df_tx[df_tx['status'] == 'Success']) if not df_tx.empty else 0
         streak_bonus = 0.01 if success_tx_count >= 3 else 0.0
         
@@ -288,7 +293,7 @@ else:
     if menu == "📦 Product offerings":
         if st.session_state.selected_plan is None:
             st.markdown("## Auto-Invest in Promising Startups.")
-            st.markdown("<p style='color: #8c92a4; font-size: 16px; margin-bottom: 5px;'>Select a structured allocation plan below to view projections and E-Mandate frequencies.</p>", unsafe_allow_html=True)
+            st.markdown("<p style='color: #cbd5e1; font-size: 16px; margin-bottom: 5px;'>Select a structured allocation plan below to view projections and E-Mandate frequencies.</p>", unsafe_allow_html=True)
             
             st.markdown("""
             <div class="comparison-box">
@@ -329,7 +334,7 @@ else:
                 st.session_state.selected_plan = None
                 st.rerun()
                 
-            st.markdown(f"<h1>{title} <span style='color: #00e676;'>| Target: ₹ {target_amt:,.0f}</span></h1>", unsafe_allow_html=True)
+            st.markdown(f"<h1>{title} <span style='color: #00ff88;'>| Target: ₹ {target_amt:,.0f}</span></h1>", unsafe_allow_html=True)
             st.write(plan['desc'])
             
             st.markdown("""
@@ -355,15 +360,15 @@ else:
                     st.markdown(f"""
                     <div class="detail-card">
                         <h3 style='margin-bottom:0;'>{f_name} SIP</h3>
-                        <p style='color: #8c92a4;'>Deduction: <b>₹ {f_amt:,.2f}</b></p>
-                        <hr style='border-color: #1f242d;'>
-                        <p style='text-align: left; font-size: 13px; color: #cfd8dc;'>
+                        <p style='color: #cbd5e1;'>Deduction: <b>₹ {f_amt:,.2f}</b></p>
+                        <hr style='border-color: #334155;'>
+                        <p style='text-align: left; font-size: 13px; color: #f1f5f9;'>
                             <b>Target Yield Est.:</b> {f_roi*100:.0f}%{bonus_text}<br>
                             <b>Gross Maturity:</b> ₹ {maturity:,.2f}<br>
-                            <span style='color: #ff9900;'><b>Tenure:</b> 3 Months</span><br>
-                            <span style='color: #ff9900;'><b>Lock-in Period:</b> 1 Month</span><br>
+                            <span style='color: #fbbf24;'><b>Tenure:</b> 3 Months</span><br>
+                            <span style='color: #fbbf24;'><b>Lock-in Period:</b> 1 Month</span><br>
                             <b>Platform Fee + GST:</b> -₹ {fee+gst:,.2f}<br><br>
-                            <span style='color: #00e676; font-size: 16px;'><b>Est. Net Payout: ₹ {net_payout:,.2f}</b></span>
+                            <span style='color: #00ff88; font-size: 16px;'><b>Est. Net Payout: ₹ {net_payout:,.2f}</b></span>
                         </p>
                     </div>
                     """, unsafe_allow_html=True)
@@ -377,17 +382,16 @@ else:
     elif menu == "📊 My Portfolio":
         st.subheader("Active Asset Allocation & Projections")
         if active_plan is not None:
-            # Gamification & Streak Widget
             success_count = len(df_tx[df_tx['status'] == 'Success']) if not df_tx.empty else 0
-            streak_days = success_count * 3  # Simulated streak
+            streak_days = success_count * 3
             badge_level = "🔥 Gold Investor Streak" if success_count >= 3 else "🌱 Silver Streak (Build up to unlock +1% Yield Boost)"
             
             st.markdown(f"""
             <div class="gamification-box">
-                <h4 style="color: #ff9900; margin-top:0;">🤖 AI Yield Predictor & Gamification</h4>
+                <h4 style="color: #fbbf24; margin-top:0;">🤖 AI Yield Predictor & Gamification</h4>
                 <p style="margin-bottom: 5px;"><b>Active Streak:</b> {streak_days} Days Consistent AutoPay</p>
                 <p style="margin-bottom: 5px;"><b>Investor Status Badge:</b> {badge_level}</p>
-                <p style="font-size: 12px; color: #8c92a4; margin-bottom:0;">Maintain consistent deductions to qualify for AI-modeled yield bonuses and VIP fee waivers.</p>
+                <p style="font-size: 12px; color: #cbd5e1; margin-bottom:0;">Maintain consistent deductions to qualify for AI-modeled yield bonuses and VIP fee waivers.</p>
             </div>
             """, unsafe_allow_html=True)
 
@@ -435,8 +439,8 @@ else:
             if not is_target_completed:
                 st.markdown(f"""
                 <div class="locked-box">
-                    <h3 style="color: #ff9900; margin-bottom: 5px;">🔒 Maturity & Withdrawal Locked</h3>
-                    <p style="color: #cfd8dc; font-size: 14px;">Your SIP deductions are ongoing. Withdrawals remain strictly locked until your <b>Target Principal of ₹ {target_value:,.0f}</b> is fully accumulated.</p>
+                    <h3 style="color: #fbbf24; margin-bottom: 5px;">🔒 Maturity & Withdrawal Locked</h3>
+                    <p style="color: #e2e8f0; font-size: 14px;">Your SIP deductions are ongoing. Withdrawals remain strictly locked until your <b>Target Principal of ₹ {target_value:,.0f}</b> is fully accumulated.</p>
                 </div>
                 """, unsafe_allow_html=True)
             else:
@@ -518,7 +522,7 @@ Estimated Net Gain    : ₹ {net_profit:,.2f}
             st.markdown("""
             <div class="support-card">
                 <h3>💬 WhatsApp Support</h3>
-                <p style="color: #8c92a4; font-size: 13px;">Instant chat assistance with our executive.</p>
+                <p style="color: #cbd5e1; font-size: 13px;">Instant chat assistance with our executive.</p>
                 <a href="https://wa.me/919876543210" target="_blank"><button style="background-color: #25D366; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer;">Chat on WhatsApp</button></a>
             </div>
             """, unsafe_allow_html=True)
@@ -527,7 +531,7 @@ Estimated Net Gain    : ₹ {net_profit:,.2f}
             st.markdown("""
             <div class="support-card">
                 <h3>🤖 Telegram Bot</h3>
-                <p style="color: #8c92a4; font-size: 13px;">Get automated updates via our Telegram Bot.</p>
+                <p style="color: #cbd5e1; font-size: 13px;">Get automated updates via our Telegram Bot.</p>
                 <a href="https://t.me/GullakCoinSupportBot" target="_blank"><button style="background-color: #0088cc; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer;">Join Telegram Bot</button></a>
             </div>
             """, unsafe_allow_html=True)
@@ -536,8 +540,8 @@ Estimated Net Gain    : ₹ {net_profit:,.2f}
             st.markdown("""
             <div class="support-card">
                 <h3>📧 Email Support</h3>
-                <p style="color: #8c92a4; font-size: 13px;">Write to us at support@gullakcoin.pro</p>
-                <a href="mailto:support@gullakcoin.pro"><button style="background-color: #ff9900; color: black; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer;">Send Email</button></a>
+                <p style="color: #cbd5e1; font-size: 13px;">Write to us at support@gullakcoin.pro</p>
+                <a href="mailto:support@gullakcoin.pro"><button style="background-color: #00ff88; color: black; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer;">Send Email</button></a>
             </div>
             """, unsafe_allow_html=True)
 
