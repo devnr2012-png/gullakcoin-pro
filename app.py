@@ -8,7 +8,7 @@ import time
 # --- PAGE SETUP ---
 st.set_page_config(page_title="GullakCoin Pro", page_icon="🪙", layout="wide")
 
-# --- CUSTOM CSS (Clean Light Theme: White Background & Black Text) ---
+# --- CUSTOM CSS (Clean Light Theme & High Visibility) ---
 st.markdown("""
 <style>
     /* Global App Background & Text */
@@ -99,6 +99,13 @@ def update_kyc(username, pan, bank):
     conn.commit()
     conn.close()
 
+def update_password(username, new_pass):
+    conn = sqlite3.connect('gullakcoin_advanced.db')
+    c = conn.cursor()
+    c.execute("UPDATE users SET password=? WHERE username=?", (new_pass, username))
+    conn.commit()
+    conn.close()
+
 def get_data(username):
     conn = sqlite3.connect('gullakcoin_advanced.db')
     df_tx = pd.read_sql_query(f"SELECT * FROM transactions WHERE username='{username}'", conn)
@@ -134,6 +141,7 @@ if 'current_user' not in st.session_state: st.session_state.current_user = ""
 if 'otp_generated' not in st.session_state: st.session_state.otp_generated = ""
 if 'auth_stage' not in st.session_state: st.session_state.auth_stage = "none"
 if 'selected_plan' not in st.session_state: st.session_state.selected_plan = None
+if 'forgot_user' not in st.session_state: st.session_state.forgot_user = ""
 
 # --- AUTHENTICATION SCREEN ---
 if not st.session_state.logged_in:
@@ -147,7 +155,7 @@ if not st.session_state.logged_in:
         </div>
     """, unsafe_allow_html=True)
     
-    tab1, tab2 = st.tabs(["Secure Login", "Create Account"])
+    tab1, tab2, tab3 = st.tabs(["Secure Login", "Create Account", "🔑 Forgot Password"])
     
     with tab1:
         st.write("")
@@ -220,6 +228,50 @@ if not st.session_state.logged_in:
                     st.rerun()
                 else:
                     st.error("Invalid verification code.")
+
+    with tab3:
+        st.write("")
+        f_user = st.text_input("Enter Your Registered Email or Mobile Number", key="f_user")
+        st.write("")
+        
+        if st.button("Send Password Reset OTP", use_container_width=True):
+            if f_user:
+                conn = sqlite3.connect('gullakcoin_advanced.db')
+                c = conn.cursor()
+                c.execute("SELECT * FROM users WHERE username=?", (f_user,))
+                user_record = c.fetchone()
+                conn.close()
+                
+                if user_record:
+                    otp = str(random.randint(100000, 999999))
+                    st.session_state.otp_generated = otp
+                    st.session_state.forgot_user = f_user
+                    st.session_state.auth_stage = "forgot_otp"
+                    st.success(f"🔐 Password Reset OTP Sent: **{otp}** (Simulated SMS)")
+                else:
+                    st.error("Account not found with this mobile number/email.")
+            else:
+                st.warning("Please enter your registered number or email.")
+                
+        if st.session_state.auth_stage == "forgot_otp":
+            f_otp_input = st.text_input("Enter 6-Digit Reset OTP", key="f_otp")
+            new_pass_1 = st.text_input("New Password", type="password", key="n_pass1")
+            new_pass_2 = st.text_input("Confirm New Password", type="password", key="n_pass2")
+            
+            if st.button("Reset Password & Save", type="primary", use_container_width=True):
+                if f_otp_input == st.session_state.otp_generated:
+                    if new_pass_1 and new_pass_1 == new_pass_2:
+                        update_password(st.session_state.forgot_user, new_pass_1)
+                        st.success("🎉 Password updated successfully! Please go to Secure Login.")
+                        st.session_state.auth_stage = "none"
+                        st.session_state.forgot_user = ""
+                        time.sleep(3)
+                        st.rerun()
+                    else:
+                        st.error("Passwords do not match or empty.")
+                else:
+                    st.error("Invalid verification code.")
+                    
     st.markdown("</div>", unsafe_allow_html=True)
 
 # --- MAIN DASHBOARD ---
