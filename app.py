@@ -8,7 +8,7 @@ import time
 # --- PAGE SETUP ---
 st.set_page_config(page_title="GullakCoin Pro", page_icon="🪙", layout="wide")
 
-# --- CUSTOM CSS (Best RGB Contrast, Stylish Typography & High Visibility) ---
+# --- CUSTOM CSS (Green Typography & Natural Plant Watering Background Box) ---
 st.markdown("""
 <style>
     /* Global App Background & High Contrast Text */
@@ -26,6 +26,20 @@ st.markdown("""
         background-color: #0b2920 !important; color: #ffffff !important; border: 1px solid #059669 !important; border-radius: 8px; font-weight: 500;
     }
     
+    /* Styling Streamlit Tabs (Secure Login, Create Account, Forgot Password to Green) */
+    .stTabs [data-baseweb="tab-list"] { gap: 10px; justify-content: center; }
+    .stTabs [data-baseweb="tab"] {
+        background-color: rgba(6, 78, 59, 0.4) !important;
+        border-radius: 8px !important;
+        color: #34d399 !important;
+        font-weight: 700 !important;
+        border: 1px solid #059669 !important;
+    }
+    .stTabs [aria-selected="true"] {
+        background-color: #059669 !important;
+        color: #ffffff !important;
+    }
+    
     .auth-container {
         background: rgba(11, 41, 32, 0.92);
         backdrop-filter: blur(16px);
@@ -33,36 +47,34 @@ st.markdown("""
         box-shadow: 0 25px 50px rgba(0, 0, 0, 0.7); max-width: 520px; margin: 0 auto;
     }
     
-    /* Stylish Flashing Banner with Optimum RGB Contrast */
-    .flashing-banner {
-        background: linear-gradient(135deg, rgba(6, 78, 59, 0.8), rgba(4, 120, 87, 0.8));
+    /* Natural Plant Watering & Growth Image Banner Box */
+    .plant-watering-banner {
+        background: linear-gradient(rgba(4, 47, 34, 0.6), rgba(4, 47, 34, 0.6)), 
+                    url('https://images.unsplash.com/photo-1530836369250-ef72a3f5cda8?auto=format&fit=crop&w=1000&q=80');
+        background-size: cover;
+        background-position: center;
         border: 2px solid #34d399;
-        padding: 16px 22px;
-        border-radius: 14px;
+        padding: 25px 20px;
+        border-radius: 16px;
         text-align: center;
         max-width: 520px;
         margin: 0 auto 20px auto;
-        box-shadow: 0 10px 30px rgba(52, 211, 153, 0.25);
-        animation: rgbGlow 4s infinite;
+        box-shadow: 0 10px 30px rgba(52, 211, 153, 0.3);
     }
-    @keyframes rgbGlow {
-        0% { border-color: #34d399; box-shadow: 0 0 15px rgba(52, 211, 153, 0.2); }
-        50% { border-color: #fbbf24; box-shadow: 0 0 30px rgba(251, 191, 36, 0.3); }
-        100% { border-color: #34d399; box-shadow: 0 0 15px rgba(52, 211, 153, 0.2); }
-    }
-    .flash-title {
-        font-size: 13px;
+    .banner-title {
+        font-size: 14px;
         text-transform: uppercase;
         letter-spacing: 2px;
         color: #34d399;
-        font-weight: 800;
+        font-weight: 900;
         margin-bottom: 6px;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.8);
     }
-    .flash-content {
-        font-size: 17px;
+    .banner-text {
+        font-size: 18px;
         font-weight: 700;
         color: #ffffff;
-        text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+        text-shadow: 0 2px 6px rgba(0,0,0,0.9);
     }
 
     .logo-container { text-align: center; margin-bottom: 20px; }
@@ -71,7 +83,7 @@ st.markdown("""
         font-weight: 900; font-size: 28px; padding: 12px 22px; border-radius: 16px;
         box-shadow: 0 10px 25px rgba(52, 211, 153, 0.4); letter-spacing: 1.5px;
     }
-    .brand-title { font-size: 30px; font-weight: 900; color: #ffffff; margin-top: 15px; letter-spacing: 0.5px; text-shadow: 0 2px 4px rgba(0,0,0,0.4); }
+    .brand-title { font-size: 30px; font-weight: 900; color: #ffffff; margin-top: 15px; text-shadow: 0 2px 4px rgba(0,0,0,0.4); }
     .brand-tagline { font-size: 13px; color: #34d399; margin-top: 6px; font-style: italic; font-weight: 600; }
     
     .plan-card {
@@ -199,19 +211,19 @@ if 'forgot_user' not in st.session_state: st.session_state.forgot_user = ""
 if not st.session_state.logged_in:
     st.write("")
     
-    # DYNAMIC FLASHING PLANS TICKER
+    # PLANT WATERING & WEALTH GROWTH BANNER (In Place of Blank Box)
     plans_list = [
-        "🌱 GullakCoin Seed (Target: ₹ 5,000) - Watch your small savings sprout into fruitful returns!",
-        "🌿 GullakCoin Growth (Target: ₹ 25,000) - Nourish your wealth with dynamic venture allocations.",
+        "🌱 GullakCoin Seed (Target: ₹ 5,000) - Water your small savings to sprout fruitful returns!",
+        "🌿 GullakCoin Growth (Target: ₹ 25,000) - Nurture your wealth with dynamic venture allocations.",
         "🌳 GullakCoin Plus (Target: ₹ 50,000) - Advanced mid-stage capital branching out securely.",
         "🌲 GullakCoin Superplus (Target: ₹ 100,000) - Maximum institutional tree growth & robust yield."
     ]
     active_flash = plans_list[int(time.time()) % len(plans_list)]
     
     st.markdown(f"""
-        <div class="flashing-banner">
-            <div class="flash-title">🌿 Natural Wealth Growth Ticker</div>
-            <div class="flash-content">{active_flash}</div>
+        <div class="plant-watering-banner">
+            <div class="banner-title">🌱 Nurturing Your Wealth (Planting Seeds of Success)</div>
+            <div class="banner-text">{active_flash}</div>
         </div>
     """, unsafe_allow_html=True)
     
