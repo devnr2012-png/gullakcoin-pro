@@ -8,65 +8,101 @@ import time
 # --- PAGE SETUP ---
 st.set_page_config(page_title="GullakCoin Pro", page_icon="🪙", layout="wide")
 
-# --- CUSTOM CSS (Clean Light Theme & High Visibility) ---
+# --- CUSTOM CSS (Professional Trusted Theme & Flashing Plan Banner) ---
 st.markdown("""
 <style>
     /* Global App Background & Text */
-    .stApp { background-color: #ffffff; color: #111827; font-family: 'Inter', sans-serif; }
-    [data-testid="stSidebar"] { background-color: #f1f5f9; border-right: 1px solid #cbd5e1; }
-    [data-testid="stSidebar"] * { color: #111827 !important; }
-    [data-testid="stMetricValue"] { font-size: 24px; color: #059669 !important; font-weight: 700; }
+    .stApp { 
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); 
+        color: #f8fafc; 
+        font-family: 'Inter', sans-serif; 
+    }
+    [data-testid="stSidebar"] { background-color: #0b0f19; border-right: 1px solid #334155; }
+    [data-testid="stSidebar"] * { color: #f8fafc !important; }
+    [data-testid="stMetricValue"] { font-size: 24px; color: #00ff88 !important; font-weight: 700; }
     
     /* Input Fields Visibility */
     .stTextInput input, .stSelectbox select {
-        background-color: #ffffff !important; color: #111827 !important; border: 1px solid #cbd5e1 !important; border-radius: 8px;
+        background-color: #1e293b !important; color: #ffffff !important; border: 1px solid #475569 !important; border-radius: 8px;
     }
     
     .auth-container {
-        background: #f8fafc;
-        padding: 40px; border-radius: 20px; border: 1px solid #cbd5e1;
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05); max-width: 480px; margin: 0 auto;
+        background: rgba(17, 24, 39, 0.85);
+        backdrop-filter: blur(12px);
+        padding: 40px; border-radius: 20px; border: 1px solid rgba(0, 255, 136, 0.3);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6); max-width: 520px; margin: 0 auto;
     }
-    .logo-container { text-align: center; margin-bottom: 25px; }
+    
+    /* Flashing Investment Banner (Plant Growth & Wealth Concept) */
+    .flashing-banner {
+        background: linear-gradient(135deg, rgba(5, 150, 105, 0.2), rgba(2, 132, 199, 0.2));
+        border: 1px solid #00ff88;
+        padding: 15px 20px;
+        border-radius: 12px;
+        text-align: center;
+        max-width: 520px;
+        margin: 0 auto 20px auto;
+        box-shadow: 0 8px 25px rgba(0, 255, 136, 0.15);
+        animation: pulseGlow 3s infinite;
+    }
+    @keyframes pulseGlow {
+        0% { border-color: rgba(0, 255, 136, 0.4); box-shadow: 0 0 10px rgba(0, 255, 136, 0.2); }
+        50% { border-color: rgba(0, 255, 136, 0.9); box-shadow: 0 0 25px rgba(0, 255, 136, 0.4); }
+        100% { border-color: rgba(0, 255, 136, 0.4); box-shadow: 0 0 10px rgba(0, 255, 136, 0.2); }
+    }
+    .flash-title {
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        color: #00ff88;
+        font-weight: 700;
+        margin-bottom: 4px;
+    }
+    .flash-content {
+        font-size: 16px;
+        font-weight: 600;
+        color: #ffffff;
+    }
+
+    .logo-container { text-align: center; margin-bottom: 20px; }
     .logo-badge {
-        display: inline-block; background: linear-gradient(135deg, #059669, #0284c7); color: #ffffff;
+        display: inline-block; background: linear-gradient(135deg, #00ff88, #00b4d8); color: #0b0f19;
         font-weight: 900; font-size: 28px; padding: 12px 20px; border-radius: 16px;
-        box-shadow: 0 8px 20px rgba(5, 150, 105, 0.2); letter-spacing: 1px;
+        box-shadow: 0 8px 20px rgba(0, 255, 136, 0.3); letter-spacing: 1px;
     }
-    .brand-title { font-size: 28px; font-weight: 800; color: #111827; margin-top: 15px; }
-    .brand-tagline { font-size: 13px; color: #4b5563; margin-top: 5px; font-style: italic; }
+    .brand-title { font-size: 28px; font-weight: 800; color: #ffffff; margin-top: 15px; }
+    .brand-tagline { font-size: 13px; color: #94a3b8; margin-top: 5px; font-style: italic; }
     
     .plan-card {
-        background-color: #f8fafc; padding: 25px; border-radius: 15px; border: 1px solid #cbd5e1;
+        background-color: #161e2e; padding: 25px; border-radius: 15px; border: 1px solid #334155;
         height: 220px; display: flex; flex-direction: column; justify-content: flex-start; margin-bottom: 10px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.02);
     }
     .detail-card {
-        background-color: #f8fafc; padding: 20px; border-radius: 10px; border: 1px solid #059669;
-        text-align: center; margin-top: 15px; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+        background-color: #161e2e; padding: 20px; border-radius: 10px; border: 1px solid #00ff88;
+        text-align: center; margin-top: 15px; margin-bottom: 15px;
     }
-    .plan-title { font-size: 22px; font-weight: bold; margin-bottom: 10px; color: #111827;}
-    .plan-desc { font-size: 13px; color: #4b5563; margin-bottom: 15px; line-height: 1.5; }
-    .plan-target { font-size: 20px; font-weight: bold; color: #059669; margin-top: auto; }
-    .disclaimer { font-size: 11px; color: #dc2626; font-style: italic; }
+    .plan-title { font-size: 22px; font-weight: bold; margin-bottom: 10px; color: #ffffff;}
+    .plan-desc { font-size: 13px; color: #cbd5e1; margin-bottom: 15px; line-height: 1.5; }
+    .plan-target { font-size: 20px; font-weight: bold; color: #00ff88; margin-top: auto; }
+    .disclaimer { font-size: 11px; color: #f87171; font-style: italic; }
     .locked-box {
-        background-color: #fef3c7; border: 1px solid #f59e0b; padding: 20px; border-radius: 10px; text-align: center; margin-top: 20px; color: #78350f;
+        background-color: #1e1b18; border: 1px solid #fbbf24; padding: 20px; border-radius: 10px; text-align: center; margin-top: 20px; color: #fef3c7;
     }
     .strict-rule-box {
-        background-color: #fee2e2; border: 1px solid #f87171; padding: 15px; border-radius: 8px; color: #991b1b; font-size: 13px; margin-bottom: 20px;
+        background-color: rgba(248, 113, 113, 0.1); border: 1px solid #f87171; padding: 15px; border-radius: 8px; color: #fca5a5; font-size: 13px; margin-bottom: 20px;
     }
     .comparison-box {
-        background-color: #d1fae5; border: 1px solid #34d399; padding: 15px; border-radius: 8px; color: #065f46; font-size: 13px; margin-bottom: 20px;
+        background-color: rgba(0, 255, 136, 0.08); border: 1px solid #00ff88; padding: 15px; border-radius: 8px; color: #e2e8f0; font-size: 13px; margin-bottom: 20px;
     }
     .alert-failed {
-        background-color: #fee2e2; border: 1px solid #f87171; padding: 15px; border-radius: 8px; color: #991b1b; margin-bottom: 15px;
+        background-color: rgba(248, 113, 113, 0.15); border: 1px solid #f87171; padding: 15px; border-radius: 8px; color: #f87171; margin-bottom: 15px;
     }
     .support-card {
-        background-color: #f8fafc; padding: 20px; border-radius: 12px; border: 1px solid #cbd5e1; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+        background-color: #161e2e; padding: 20px; border-radius: 12px; border: 1px solid #334155; text-align: center;
     }
     .gamification-box {
-        background: linear-gradient(135deg, #fef3c7, #d1fae5);
-        border: 1px solid #f59e0b; padding: 20px; border-radius: 15px; margin-bottom: 20px; color: #111827;
+        background: linear-gradient(135deg, rgba(251, 191, 36, 0.1), rgba(0, 255, 136, 0.1));
+        border: 1px solid rgba(251, 191, 36, 0.4); padding: 20px; border-radius: 15px; margin-bottom: 20px; color: #f8fafc;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -78,16 +114,11 @@ def init_db():
     c.execute('''CREATE TABLE IF NOT EXISTS users (
                  id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT UNIQUE, password TEXT, investor_id TEXT, kyc_status TEXT, pan TEXT, aadhar TEXT, bank_acc TEXT, ifsc TEXT, branch TEXT, bank_mobile TEXT)''')
     
-    # Safe migration to add columns if they don't exist in older DB
     existing_cols = [col[1] for col in c.execute("PRAGMA table_info(users)").fetchall()]
-    if 'aadhar' not in existing_cols:
-        c.execute("ALTER TABLE users ADD COLUMN aadhar TEXT")
-    if 'ifsc' not in existing_cols:
-        c.execute("ALTER TABLE users ADD COLUMN ifsc TEXT")
-    if 'branch' not in existing_cols:
-        c.execute("ALTER TABLE users ADD COLUMN branch TEXT")
-    if 'bank_mobile' not in existing_cols:
-        c.execute("ALTER TABLE users ADD COLUMN bank_mobile TEXT")
+    if 'aadhar' not in existing_cols: c.execute("ALTER TABLE users ADD COLUMN aadhar TEXT")
+    if 'ifsc' not in existing_cols: c.execute("ALTER TABLE users ADD COLUMN ifsc TEXT")
+    if 'branch' not in existing_cols: c.execute("ALTER TABLE users ADD COLUMN branch TEXT")
+    if 'bank_mobile' not in existing_cols: c.execute("ALTER TABLE users ADD COLUMN bank_mobile TEXT")
 
     c.execute('''CREATE TABLE IF NOT EXISTS transactions (
                  id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT, trans_type TEXT, category TEXT, amount REAL, status TEXT, date TEXT)''')
@@ -165,6 +196,24 @@ if 'forgot_user' not in st.session_state: st.session_state.forgot_user = ""
 # --- AUTHENTICATION SCREEN ---
 if not st.session_state.logged_in:
     st.write("")
+    
+    # DYNAMIC FLASHING PLANS BANNER (Plant Growth to Wealth Concept)
+    plans_list = [
+        "🌱 GullakCoin Seed (Target: ₹ 5,000) - Grow your small savings into high startup returns!",
+        "🌿 GullakCoin Growth (Target: ₹ 25,000) - Scale your wealth with dynamic venture allocations.",
+        "🌳 GullakCoin Plus (Target: ₹ 50,000) - Advanced mid-stage startup capital compounding.",
+        "🌲 GullakCoin Superplus (Target: ₹ 100,000) - Maximum yield institutional tree growth model."
+    ]
+    # Rotate plans based on current time seconds to create live flashing effect on refresh/interaction
+    active_flash = plans_list[int(time.time()) % len(plans_list)]
+    
+    st.markdown(f"""
+        <div class="flashing-banner">
+            <div class="flash-title">🌱 Wealth Growth Flashing Banner</div>
+            <div class="flash-content">{active_flash}</div>
+        </div>
+    """, unsafe_allow_html=True)
+    
     st.markdown("<div class='auth-container'>", unsafe_allow_html=True)
     st.markdown("""
         <div class="logo-container">
@@ -370,7 +419,7 @@ else:
     if menu == "📦 Product offerings":
         if st.session_state.selected_plan is None:
             st.markdown("## Auto-Invest in Promising Startups.")
-            st.markdown("<p style='color: #4b5563; font-size: 16px; margin-bottom: 5px;'>Select a structured allocation plan below to view projections and E-Mandate frequencies.</p>", unsafe_allow_html=True)
+            st.markdown("<p style='color: #cbd5e1; font-size: 16px; margin-bottom: 5px;'>Select a structured allocation plan below to view projections and E-Mandate frequencies.</p>", unsafe_allow_html=True)
             
             st.markdown("""
             <div class="comparison-box">
@@ -411,7 +460,7 @@ else:
                 st.session_state.selected_plan = None
                 st.rerun()
                 
-            st.markdown(f"<h1>{title} <span style='color: #059669;'>| Target: ₹ {target_amt:,.0f}</span></h1>", unsafe_allow_html=True)
+            st.markdown(f"<h1>{title} <span style='color: #00ff88;'>| Target: ₹ {target_amt:,.0f}</span></h1>", unsafe_allow_html=True)
             st.write(plan['desc'])
             
             st.markdown("""
@@ -437,15 +486,15 @@ else:
                     st.markdown(f"""
                     <div class="detail-card">
                         <h3 style='margin-bottom:0;'>{f_name} SIP</h3>
-                        <p style='color: #4b5563;'>Deduction: <b>₹ {f_amt:,.2f}</b></p>
-                        <hr style='border-color: #cbd5e1;'>
-                        <p style='text-align: left; font-size: 13px; color: #111827;'>
+                        <p style='color: #cbd5e1;'>Deduction: <b>₹ {f_amt:,.2f}</b></p>
+                        <hr style='border-color: #334155;'>
+                        <p style='text-align: left; font-size: 13px; color: #f1f5f9;'>
                             <b>Target Yield Est.:</b> {f_roi*100:.0f}%{bonus_text}<br>
                             <b>Gross Maturity:</b> ₹ {maturity:,.2f}<br>
-                            <span style='color: #d97706;'><b>Tenure:</b> 3 Months</span><br>
-                            <span style='color: #d97706;'><b>Lock-in Period:</b> 1 Month</span><br>
+                            <span style='color: #fbbf24;'><b>Tenure:</b> 3 Months</span><br>
+                            <span style='color: #fbbf24;'><b>Lock-in Period:</b> 1 Month</span><br>
                             <b>Platform Fee + GST:</b> -₹ {fee+gst:,.2f}<br><br>
-                            <span style='color: #059669; font-size: 16px;'><b>Est. Net Payout: ₹ {net_payout:,.2f}</b></span>
+                            <span style='color: #00ff88; font-size: 16px;'><b>Est. Net Payout: ₹ {net_payout:,.2f}</b></span>
                         </p>
                     </div>
                     """, unsafe_allow_html=True)
@@ -465,10 +514,10 @@ else:
             
             st.markdown(f"""
             <div class="gamification-box">
-                <h4 style="color: #d97706; margin-top:0;">🤖 AI Yield Predictor & Gamification</h4>
+                <h4 style="color: #fbbf24; margin-top:0;">🤖 AI Yield Predictor & Gamification</h4>
                 <p style="margin-bottom: 5px;"><b>Active Streak:</b> {streak_days} Days Consistent AutoPay</p>
                 <p style="margin-bottom: 5px;"><b>Investor Status Badge:</b> {badge_level}</p>
-                <p style="font-size: 12px; color: #4b5563; margin-bottom:0;">Maintain consistent deductions to qualify for AI-modeled yield bonuses and VIP fee waivers.</p>
+                <p style="font-size: 12px; color: #cbd5e1; margin-bottom:0;">Maintain consistent deductions to qualify for AI-modeled yield bonuses and VIP fee waivers.</p>
             </div>
             """, unsafe_allow_html=True)
 
@@ -516,8 +565,8 @@ else:
             if not is_target_completed:
                 st.markdown(f"""
                 <div class="locked-box">
-                    <h3 style="color: #b45309; margin-bottom: 5px;">🔒 Maturity & Withdrawal Locked</h3>
-                    <p style="color: #78350f; font-size: 14px;">Your SIP deductions are ongoing. Withdrawals remain strictly locked until your <b>Target Principal of ₹ {target_value:,.0f}</b> is fully accumulated.</p>
+                    <h3 style="color: #fbbf24; margin-bottom: 5px;">🔒 Maturity & Withdrawal Locked</h3>
+                    <p style="color: #e2e8f0; font-size: 14px;">Your SIP deductions are ongoing. Withdrawals remain strictly locked until your <b>Target Principal of ₹ {target_value:,.0f}</b> is fully accumulated.</p>
                 </div>
                 """, unsafe_allow_html=True)
             else:
@@ -578,7 +627,7 @@ Estimated Net Gain    : ₹ {net_profit:,.2f}
         st.markdown("---")
         
         st.subheader("Update PAN, Aadhaar & Bank Details")
-        st.markdown("<p style='font-size: 13px; color: #4b5563;'><b>Rule:</b> Bank Account verification requires your bank registered mobile number to match your login mobile number (<b>" + username + "</b>) for automatic approval. Otherwise KYC remains Pending.</p>", unsafe_allow_html=True)
+        st.markdown("<p style='font-size: 13px; color: #cbd5e1;'><b>Rule:</b> Bank Account verification requires your bank registered mobile number to match your login mobile number (<b>" + username + "</b>) for automatic approval. Otherwise KYC remains Pending.</p>", unsafe_allow_html=True)
         
         with st.form("kyc_form"):
             new_pan = st.text_input("PAN Card Number", value=pan_num, placeholder="ABCDE1234F")
@@ -612,7 +661,7 @@ Estimated Net Gain    : ₹ {net_profit:,.2f}
             st.markdown("""
             <div class="support-card">
                 <h3>💬 WhatsApp Support</h3>
-                <p style="color: #4b5563; font-size: 13px;">Instant chat assistance with our executive.</p>
+                <p style="color: #cbd5e1; font-size: 13px;">Instant chat assistance with our executive.</p>
                 <a href="https://wa.me/919876543210" target="_blank"><button style="background-color: #25D366; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer;">Chat on WhatsApp</button></a>
             </div>
             """, unsafe_allow_html=True)
@@ -621,7 +670,7 @@ Estimated Net Gain    : ₹ {net_profit:,.2f}
             st.markdown("""
             <div class="support-card">
                 <h3>🤖 Telegram Bot</h3>
-                <p style="color: #4b5563; font-size: 13px;">Get automated updates via our Telegram Bot.</p>
+                <p style="color: #cbd5e1; font-size: 13px;">Get automated updates via our Telegram Bot.</p>
                 <a href="https://t.me/GullakCoinSupportBot" target="_blank"><button style="background-color: #0088cc; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer;">Join Telegram Bot</button></a>
             </div>
             """, unsafe_allow_html=True)
@@ -630,8 +679,8 @@ Estimated Net Gain    : ₹ {net_profit:,.2f}
             st.markdown("""
             <div class="support-card">
                 <h3>📧 Email Support</h3>
-                <p style="color: #4b5563; font-size: 13px;">Write to us at support@gullakcoin.pro</p>
-                <a href="mailto:support@gullakcoin.pro"><button style="background-color: #059669; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer;">Send Email</button></a>
+                <p style="color: #cbd5e1; font-size: 13px;">Write to us at support@gullakcoin.pro</p>
+                <a href="mailto:support@gullakcoin.pro"><button style="background-color: #00ff88; color: black; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer;">Send Email</button></a>
             </div>
             """, unsafe_allow_html=True)
 
