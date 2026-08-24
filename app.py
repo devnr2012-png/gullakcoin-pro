@@ -8,7 +8,7 @@ import time
 # --- PAGE SETUP ---
 st.set_page_config(page_title="GullakCoin Pro", page_icon="🪙", layout="wide")
 
-# --- CUSTOM CSS (Black Tabs, Green Text, RGB Opposite Explore Buttons, Sidebar ID/Logout) ---
+# --- CUSTOM CSS (Black Tabs, Green Text, RGB Opposite Explore Buttons & Blue Bold Header Metrics) ---
 st.markdown("""
 <style>
     /* Global App Background & High Contrast Text */
@@ -19,7 +19,19 @@ st.markdown("""
     }
     [data-testid="stSidebar"] { background-color: #04120e; border-right: 1px solid #064e3b; }
     [data-testid="stSidebar"] * { color: #f8fafc !important; }
-    [data-testid="stMetricValue"] { font-size: 26px; color: #34d399 !important; font-weight: 800; text-shadow: 0 0 10px rgba(52, 211, 153, 0.3); }
+    
+    /* Header Metrics Styling: Vibrant Blue, Larger Font & Bold */
+    [data-testid="stMetricValue"] { 
+        font-size: 30px !important; 
+        color: #38bdf8 !important; 
+        font-weight: 900 !important; 
+        text-shadow: 0 0 12px rgba(56, 189, 248, 0.4); 
+    }
+    [data-testid="stMetricLabel"] {
+        color: #93c5fd !important;
+        font-size: 15px !important;
+        font-weight: 700 !important;
+    }
     
     /* RGB Opposite Styling for Sidebar ID Badge & Logout Button */
     [data-testid="stSidebar"] code {
@@ -44,7 +56,7 @@ st.markdown("""
         color: #ffffff !important;
     }
     
-    /* RGB Opposite Styling for Dashboard Explore Buttons (Replacing White Buttons) */
+    /* RGB Opposite Styling for Dashboard Explore Buttons */
     .stButton button {
         background: linear-gradient(135deg, #34d399, #059669) !important;
         color: #061a14 !important;
