@@ -76,7 +76,7 @@ def init_db():
     conn = sqlite3.connect('gullakcoin_advanced.db')
     c = conn.cursor()
     c.execute('''CREATE TABLE IF NOT EXISTS users (
-                 id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT UNIQUE, password TEXT, investor_id TEXT, kyc_status TEXT, pan TEXT, bank_acc TEXT)''')
+                 id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT UNIQUE, password TEXT, investor_id TEXT, kyc_status TEXT, pan TEXT, aadhar TEXT, bank_acc TEXT, ifsc TEXT, branch TEXT, bank_mobile TEXT)''')
     c.execute('''CREATE TABLE IF NOT EXISTS transactions (
                  id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT, trans_type TEXT, category TEXT, amount REAL, status TEXT, date TEXT)''')
     c.execute('''CREATE TABLE IF NOT EXISTS subscriptions (
@@ -87,17 +87,25 @@ def init_db():
 def get_user_profile(username):
     conn = sqlite3.connect('gullakcoin_advanced.db')
     c = conn.cursor()
-    c.execute("SELECT investor_id, kyc_status, pan, bank_acc FROM users WHERE username=?", (username,))
+    c.execute("SELECT investor_id, kyc_status, pan, aadhar, bank_acc, ifsc, branch, bank_mobile FROM users WHERE username=?", (username,))
     res = c.fetchone()
     conn.close()
     return res
 
-def update_kyc(username, pan, bank):
+def update_kyc(username, pan, aadhar, bank_acc, ifsc, branch, bank_mobile):
     conn = sqlite3.connect('gullakcoin_advanced.db')
     c = conn.cursor()
-    c.execute("UPDATE users SET pan=?, bank_acc=?, kyc_status='Verified' WHERE username=?", (pan, bank, username))
+    # If bank mobile matches username (or provided correctly), set KYC as Verified
+    if bank_mobile.strip() == username.strip():
+        kyc_status = 'Verified (Approved)'
+    else:
+        kyc_status = 'Pending (Mobile Mismatch)'
+        
+    c.execute("UPDATE users SET pan=?, aadhar=?, bank_acc=?, ifsc=?, branch=?, bank_mobile=?, kyc_status=? WHERE username=?", 
+              (pan, aadhar, bank_acc, ifsc, branch, bank_mobile, kyc_status, username))
     conn.commit()
     conn.close()
+    return kyc_status
 
 def update_password(username, new_pass):
     conn = sqlite3.connect('gullakcoin_advanced.db')
@@ -218,8 +226,8 @@ if not st.session_state.logged_in:
                     investor_id = f"GC-PRO-{random.randint(100000, 999900)}"
                     conn = sqlite3.connect('gullakcoin_advanced.db')
                     c = conn.cursor()
-                    c.execute("INSERT INTO users (username, password, investor_id, kyc_status, pan, bank_acc) VALUES (?, ?, ?, ?, ?, ?)", 
-                              (s_user, s_pass, investor_id, 'Pending', '', ''))
+                    c.execute("INSERT INTO users (username, password, investor_id, kyc_status, pan, aadhar, bank_acc, ifsc, branch, bank_mobile) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", 
+                              (s_user, s_pass, investor_id, 'Pending', '', '', '', '', '', ''))
                     conn.commit()
                     conn.close()
                     st.success(f"🎉 Account created successfully! Your Investor ID is {investor_id}. Please login.")
@@ -281,7 +289,11 @@ else:
     investor_id = user_prof[0] if user_prof and user_prof[0] else "GC-PRO-PENDING"
     kyc_status = user_prof[1] if user_prof else "Pending"
     pan_num = user_prof[2] if user_prof else ""
-    bank_acc = user_prof[3] if user_prof else ""
+    aadhar_num = user_prof[3] if user_prof else ""
+    bank_acc = user_prof[4] if user_prof else ""
+    ifsc_code = user_prof[5] if user_prof else ""
+    branch_name = user_prof[6] if user_prof else ""
+    bank_mobile = user_prof[7] if user_prof else ""
 
     df_tx, df_sub = get_data(username)
 
@@ -498,30 +510,34 @@ else:
                 </div>
                 """, unsafe_allow_html=True)
             else:
-                w_col1, w_col2 = st.columns(2)
-                with w_col1:
-                    st.success("✅ Target 100% Achieved!")
-                    st.write(f"📅 **Target Completion Date:** {completion_date.strftime('%d %B %Y')}")
-                    st.write(f"🔓 **Redemption Unlock Date:** {withdrawal_date.strftime('%d %B %Y')}")
-                    
-                with w_col2:
-                    maturity, fee, gst, net_payout, net_profit, _ = calculate_payout(target_value, active_plan['frequency'])
-                    st.metric("Achieved Maturity Value", f"₹ {maturity:,.2f}")
-                    
-                    if not is_lockin_passed:
-                        st.warning(f"⏳ Withdrawal unlocks on {withdrawal_date.strftime('%d %B %Y')} (1-month hold period active).")
-                        st.button("Initiate Withdrawal Request", disabled=True, use_container_width=True)
-                    else:
-                        if st.button("Initiate Withdrawal Request", type="primary", use_container_width=True):
-                            st.success("✅ Redemption request queued successfully for bank transfer.")
-                            st.code(f"""
+                # Check if KYC is verified & bank details approved
+                if "Verified" not in kyc_status:
+                    st.error("🚨 Withdrawal Blocked: Your Bank Details & KYC Verification is Pending/Mismatch. Please go to 'Profile & KYC' to complete verification with your registered mobile number.")
+                else:
+                    w_col1, w_col2 = st.columns(2)
+                    with w_col1:
+                        st.success("✅ Target 100% Achieved & Bank Verified!")
+                        st.write(f"📅 **Target Completion Date:** {completion_date.strftime('%d %B %Y')}")
+                        st.write(f"🔓 **Redemption Unlock Date:** {withdrawal_date.strftime('%d %B %Y')}")
+                        
+                    with w_col2:
+                        maturity, fee, gst, net_payout, net_profit, _ = calculate_payout(target_value, active_plan['frequency'])
+                        st.metric("Achieved Maturity Value", f"₹ {maturity:,.2f}")
+                        
+                        if not is_lockin_passed:
+                            st.warning(f"⏳ Withdrawal unlocks on {withdrawal_date.strftime('%d %B %Y')} (1-month hold period active).")
+                            st.button("Initiate Withdrawal Request", disabled=True, use_container_width=True)
+                        else:
+                            if st.button("Initiate Withdrawal Request", type="primary", use_container_width=True):
+                                st.success("✅ Redemption request queued successfully for bank transfer.")
+                                st.code(f"""
 Gross Maturity Amount : ₹ {maturity:,.2f}
 - Processing Fee (2%) : ₹ {fee:,.2f}
 - GST on Fee (18%)    : ₹ {gst:,.2f}
 -----------------------------------
 Net Bank Credit       : ₹ {net_payout:,.2f}
 Estimated Net Gain    : ₹ {net_profit:,.2f}
-                            """)
+                                """)
         else:
             st.warning("No active capital allocations found. Explore product offerings to initiate a plan.")
 
@@ -545,26 +561,36 @@ Estimated Net Gain    : ₹ {net_profit:,.2f}
     elif menu == "👤 Profile & KYC":
         st.subheader("User Profile & KYC Verification")
         st.markdown(f"""
-        * **Registered Account:** `{username}`
+        * **Registered Account / Mobile:** `{username}`
         * **Permanent Investor ID:** `👤 {investor_id}`
-        * **Current KYC Status:** **{kyc_status}**
+        * **Current KYC & Bank Status:** **{kyc_status}**
         """)
         st.markdown("---")
         
-        st.subheader("Update KYC Details")
+        st.subheader("Update PAN, Aadhaar & Bank Details")
+        st.markdown("<p style='font-size: 13px; color: #4b5563;'><b>Rule:</b> Bank Account verification requires your bank registered mobile number to match your login mobile number (<b>" + username + "</b>) for automatic approval. Otherwise KYC remains Pending.</p>", unsafe_allow_html=True)
+        
         with st.form("kyc_form"):
             new_pan = st.text_input("PAN Card Number", value=pan_num, placeholder="ABCDE1234F")
-            new_bank = st.text_input("Bank Account Number & IFSC", value=bank_acc, placeholder="A/C No & IFSC Code")
-            submit_kyc = st.form_submit_button("Submit KYC for Verification", type="primary")
+            new_aadhar = st.text_input("Aadhaar Card Number", value=aadhar_num, placeholder="12 Digit Aadhaar Number")
+            new_bank = st.text_input("Bank Account Number", value=bank_acc, placeholder="Enter Bank Account Number")
+            new_ifsc = st.text_input("IFSC Code", value=ifsc_code, placeholder="SBIN000XXXX")
+            new_branch = st.text_input("Branch Name", value=branch_name, placeholder="Main Branch City")
+            new_bmobile = st.text_input("Bank Registered Mobile Number", value=bank_mobile, placeholder="Must match login mobile")
+            
+            submit_kyc = st.form_submit_button("Submit KYC & Bank Details for Verification", type="primary")
             
             if submit_kyc:
-                if new_pan and new_bank:
-                    update_kyc(username, new_pan, new_bank)
-                    st.success("✅ KYC details submitted and verified successfully!")
+                if new_pan and new_aadhar and new_bank and new_ifsc and new_branch and new_bmobile:
+                    res_status = update_kyc(username, new_pan, new_aadhar, new_bank, new_ifsc, new_branch, new_bmobile)
+                    if "Verified" in res_status:
+                        st.success("✅ Bank details & KYC verified successfully! Account Approved.")
+                    else:
+                        st.warning("⚠️ KYC updated as Pending. Bank registered mobile number must match your login mobile number for approval.")
                     time.sleep(2)
                     st.rerun()
                 else:
-                    st.warning("Please fill in all KYC details.")
+                    st.warning("Please fill in all KYC and banking fields completely.")
 
     elif menu == "💬 Support & Help":
         st.subheader("Customer Support & Assistance")
