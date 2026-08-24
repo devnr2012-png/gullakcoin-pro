@@ -77,6 +77,18 @@ def init_db():
     c = conn.cursor()
     c.execute('''CREATE TABLE IF NOT EXISTS users (
                  id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT UNIQUE, password TEXT, investor_id TEXT, kyc_status TEXT, pan TEXT, aadhar TEXT, bank_acc TEXT, ifsc TEXT, branch TEXT, bank_mobile TEXT)''')
+    
+    # Safe migration to add columns if they don't exist in older DB
+    existing_cols = [col[1] for col in c.execute("PRAGMA table_info(users)").fetchall()]
+    if 'aadhar' not in existing_cols:
+        c.execute("ALTER TABLE users ADD COLUMN aadhar TEXT")
+    if 'ifsc' not in existing_cols:
+        c.execute("ALTER TABLE users ADD COLUMN ifsc TEXT")
+    if 'branch' not in existing_cols:
+        c.execute("ALTER TABLE users ADD COLUMN branch TEXT")
+    if 'bank_mobile' not in existing_cols:
+        c.execute("ALTER TABLE users ADD COLUMN bank_mobile TEXT")
+
     c.execute('''CREATE TABLE IF NOT EXISTS transactions (
                  id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT, trans_type TEXT, category TEXT, amount REAL, status TEXT, date TEXT)''')
     c.execute('''CREATE TABLE IF NOT EXISTS subscriptions (
@@ -95,7 +107,6 @@ def get_user_profile(username):
 def update_kyc(username, pan, aadhar, bank_acc, ifsc, branch, bank_mobile):
     conn = sqlite3.connect('gullakcoin_advanced.db')
     c = conn.cursor()
-    # If bank mobile matches username (or provided correctly), set KYC as Verified
     if bank_mobile.strip() == username.strip():
         kyc_status = 'Verified (Approved)'
     else:
@@ -510,7 +521,6 @@ else:
                 </div>
                 """, unsafe_allow_html=True)
             else:
-                # Check if KYC is verified & bank details approved
                 if "Verified" not in kyc_status:
                     st.error("🚨 Withdrawal Blocked: Your Bank Details & KYC Verification is Pending/Mismatch. Please go to 'Profile & KYC' to complete verification with your registered mobile number.")
                 else:
