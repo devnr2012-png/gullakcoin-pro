@@ -8,7 +8,7 @@ import time
 # --- PAGE SETUP ---
 st.set_page_config(page_title="GullakCoin Pro", page_icon="🪙", layout="wide")
 
-# --- CUSTOM CSS (Green Typography & Natural Plant Watering Background Box) ---
+# --- CUSTOM CSS (Vibrant Green Typography & Natural Theme) ---
 st.markdown("""
 <style>
     /* Global App Background & High Contrast Text */
@@ -21,22 +21,32 @@ st.markdown("""
     [data-testid="stSidebar"] * { color: #f8fafc !important; }
     [data-testid="stMetricValue"] { font-size: 26px; color: #34d399 !important; font-weight: 800; text-shadow: 0 0 10px rgba(52, 211, 153, 0.3); }
     
-    /* Input Fields Visibility & Styling */
+    /* Input Fields Labels & Visibility Styling */
+    .stTextInput label, .stSelectbox label {
+        color: #34d399 !important;
+        font-weight: 700 !important;
+        font-size: 14px !important;
+    }
     .stTextInput input, .stSelectbox select {
         background-color: #0b2920 !important; color: #ffffff !important; border: 1px solid #059669 !important; border-radius: 8px; font-weight: 500;
     }
     
-    /* Styling Streamlit Tabs (Secure Login, Create Account, Forgot Password to Green) */
+    /* Forcing All Tab Titles (Secure Login, Create Account, Forgot Password) to be Bright Green */
     .stTabs [data-baseweb="tab-list"] { gap: 10px; justify-content: center; }
     .stTabs [data-baseweb="tab"] {
-        background-color: rgba(6, 78, 59, 0.4) !important;
+        background-color: rgba(6, 78, 59, 0.6) !important;
         border-radius: 8px !important;
-        color: #34d399 !important;
-        font-weight: 700 !important;
         border: 1px solid #059669 !important;
+    }
+    .stTabs [data-baseweb="tab"] p {
+        color: #34d399 !important;
+        font-weight: 800 !important;
+        font-size: 15px !important;
     }
     .stTabs [aria-selected="true"] {
         background-color: #059669 !important;
+    }
+    .stTabs [aria-selected="true"] p {
         color: #ffffff !important;
     }
     
@@ -84,7 +94,7 @@ st.markdown("""
         box-shadow: 0 10px 25px rgba(52, 211, 153, 0.4); letter-spacing: 1.5px;
     }
     .brand-title { font-size: 30px; font-weight: 900; color: #ffffff; margin-top: 15px; text-shadow: 0 2px 4px rgba(0,0,0,0.4); }
-    .brand-tagline { font-size: 13px; color: #34d399; margin-top: 6px; font-style: italic; font-weight: 600; }
+    .brand-tagline { font-size: 13px; color: #34d399; margin-top: 6px; font-style: italic; font-weight: 700; }
     
     .plan-card {
         background-color: #0b2920; padding: 25px; border-radius: 16px; border: 1px solid #047857;
@@ -211,7 +221,7 @@ if 'forgot_user' not in st.session_state: st.session_state.forgot_user = ""
 if not st.session_state.logged_in:
     st.write("")
     
-    # PLANT WATERING & WEALTH GROWTH BANNER (In Place of Blank Box)
+    # PLANT WATERING & WEALTH GROWTH BANNER
     plans_list = [
         "🌱 GullakCoin Seed (Target: ₹ 5,000) - Water your small savings to sprout fruitful returns!",
         "🌿 GullakCoin Growth (Target: ₹ 25,000) - Nurture your wealth with dynamic venture allocations.",
