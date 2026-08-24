@@ -8,7 +8,7 @@ import time
 # --- PAGE SETUP ---
 st.set_page_config(page_title="GullakCoin Pro", page_icon="🪙", layout="wide")
 
-# --- CUSTOM CSS (Black Tabs, Green Text, Light Green Buttons & Natural Tree Banner) ---
+# --- CUSTOM CSS (Clean Interface, Black Tabs, Green Text & Natural Forest Banner) ---
 st.markdown("""
 <style>
     /* Global App Background & High Contrast Text */
@@ -239,7 +239,7 @@ if 'forgot_user' not in st.session_state: st.session_state.forgot_user = ""
 if not st.session_state.logged_in:
     st.write("")
     
-    # NATURAL TREES & PLANT WATERING BANNER
+    # NATURAL FORESTS & WEALTH GROWTH BANNER
     plans_list = [
         "🌱 GullakCoin Seed (Target: ₹ 5,000) - Water your small savings to sprout fruitful returns!",
         "🌿 GullakCoin Growth (Target: ₹ 25,000) - Nurture your wealth with dynamic venture allocations.",
