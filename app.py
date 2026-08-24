@@ -8,7 +8,7 @@ import time
 # --- PAGE SETUP ---
 st.set_page_config(page_title="GullakCoin Pro", page_icon="🪙", layout="wide")
 
-# --- CUSTOM CSS (Stylish Tagline Font for Tabs & Light Green Button with Bold Blue Text) ---
+# --- CUSTOM CSS (Black Tab Backgrounds & Bright Green Typography) ---
 st.markdown("""
 <style>
     /* Global App Background & High Contrast Text */
@@ -31,27 +31,24 @@ st.markdown("""
         background-color: #0b2920 !important; color: #ffffff !important; border: 1px solid #059669 !important; border-radius: 8px; font-weight: 500;
     }
     
-    /* Custom Styling for Tabs to match the Grand Tree Tagline Style */
-    .stTabs [data-baseweb="tab-list"] { gap: 12px; justify-content: center; }
+    /* Tabs: Black Background with Bright Green Text */
+    .stTabs [data-baseweb="tab-list"] { gap: 10px; justify-content: center; }
     .stTabs [data-baseweb="tab"] {
-        background: linear-gradient(135deg, rgba(6, 78, 59, 0.8), rgba(4, 120, 87, 0.6)) !important;
-        border-radius: 10px !important;
-        border: 1.5px solid #34d399 !important;
+        background-color: #000000 !important;
+        border-radius: 8px !important;
+        border: 1px solid #059669 !important;
         padding: 10px 18px !important;
-        box-shadow: 0 4px 15px rgba(52, 211, 153, 0.2);
     }
     .stTabs [data-baseweb="tab"] p {
         color: #34d399 !important;
         font-weight: 800 !important;
         font-size: 15px !important;
         font-style: italic;
-        letter-spacing: 0.5px;
-        text-shadow: 0 1px 2px rgba(0,0,0,0.5);
     }
     .stTabs [aria-selected="true"] {
-        background: linear-gradient(135deg, #059669, #047857) !important;
-        border-color: #6ee7b7 !important;
-        box-shadow: 0 6px 20px rgba(52, 211, 153, 0.4);
+        background-color: #0b2920 !important;
+        border-color: #34d399 !important;
+        box-shadow: 0 0 15px rgba(52, 211, 153, 0.3);
     }
     .stTabs [aria-selected="true"] p {
         color: #ffffff !important;
@@ -60,7 +57,7 @@ st.markdown("""
     /* Customizing Primary Buttons: Light Green Background with Bold Blue Text */
     .stButton button[kind="primary"], .stButton button {
         background: linear-gradient(135deg, #a7f3d0, #6ee7b7) !important;
-        color: #1e3a8a !important; /* Bold Blue */
+        color: #1e3a8a !important;
         font-weight: 800 !important;
         border: 1px solid #34d399 !important;
         border-radius: 10px !important;
