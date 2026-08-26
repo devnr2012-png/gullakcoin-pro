@@ -5,6 +5,7 @@ import datetime
 import random
 import time
 import razorpay
+import urllib.parse
 
 # --- PAGE SETUP ---
 st.set_page_config(page_title="GullakCoin Pro", page_icon="🪙", layout="wide")
@@ -302,6 +303,7 @@ if 'otp_generated' not in st.session_state: st.session_state.otp_generated = ""
 if 'auth_stage' not in st.session_state: st.session_state.auth_stage = "none"
 if 'selected_plan' not in st.session_state: st.session_state.selected_plan = None
 if 'forgot_user' not in st.session_state: st.session_state.forgot_user = ""
+if 'whatsapp_otp_sent' not in st.session_state: st.session_state.whatsapp_otp_sent = False
 
 # --- AUTHENTICATION SCREEN ---
 if not st.session_state.logged_in:
@@ -340,7 +342,7 @@ if not st.session_state.logged_in:
         l_pass = st.text_input("Secure Password", type="password", key="l_pass")
         st.write("")
         
-        if st.button("Request Login OTP", use_container_width=True, type="primary"):
+        if st.button("Request WhatsApp OTP", use_container_width=True, type="primary"):
             conn = sqlite3.connect('gullakcoin_advanced.db')
             c = conn.cursor()
             c.execute("SELECT * FROM users WHERE username=? AND password=?", (l_user, l_pass))
@@ -351,17 +353,32 @@ if not st.session_state.logged_in:
                 otp = str(random.randint(100000, 999999))
                 st.session_state.otp_generated = otp
                 st.session_state.auth_stage = "login_otp"
-                st.success(f"🔐 Security OTP Sent: **{otp}** (Simulated SMS)")
+                st.session_state.whatsapp_otp_sent = True
+                st.success("✅ OTP Generated Successfully!")
             else:
                 st.error("Invalid credentials.")
         
-        if st.session_state.auth_stage == "login_otp":
-            l_otp_input = st.text_input("Enter 6-Digit Verification Code", key="l_otp")
+        if st.session_state.auth_stage == "login_otp" and st.session_state.whatsapp_otp_sent:
+            # WhatsApp Click-to-Chat Link Generation
+            wa_number = "919876543210" # Aapka ya support WhatsApp number yahan daalein
+            wa_msg = f"Hello, please send my GullakCoin Pro Login OTP. Verification Code: {st.session_state.otp_generated}"
+            encoded_msg = urllib.parse.quote(wa_msg)
+            wa_link = f"https://wa.me/{wa_number}?text={encoded_msg}"
+            
+            st.markdown(f"""
+            <div style="background-color: rgba(37, 211, 102, 0.15); border: 1px solid #25D366; padding: 15px; border-radius: 10px; text-align: center; margin-bottom: 15px;">
+                <p style="color: #ffffff; font-weight: 700; margin-bottom: 8px;">📲 Click below to receive your OTP instantly on WhatsApp:</p>
+                <a href="{wa_link}" target="_blank" style="background-color: #25D366; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block;">💬 Send OTP via WhatsApp</a>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            l_otp_input = st.text_input("Enter 6-Digit WhatsApp OTP", key="l_otp")
             if st.button("Verify & Access Dashboard", type="primary", use_container_width=True):
                 if l_otp_input == st.session_state.otp_generated:
                     st.session_state.logged_in = True
                     st.session_state.current_user = l_user
                     st.session_state.auth_stage = "none"
+                    st.session_state.whatsapp_otp_sent = False
                     st.rerun()
                 else:
                     st.error("Invalid verification code.")
@@ -383,7 +400,7 @@ if not st.session_state.logged_in:
                     otp = str(random.randint(100000, 999999))
                     st.session_state.otp_generated = otp
                     st.session_state.auth_stage = "signup_otp"
-                    st.success(f"🔐 Registration OTP Sent: **{otp}** (Simulated SMS)")
+                    st.success(f"🔐 Registration OTP: **{otp}** (Simulated)")
                 conn.close()
             else:
                 st.warning("Please fill in all fields.")
@@ -424,7 +441,7 @@ if not st.session_state.logged_in:
                     st.session_state.otp_generated = otp
                     st.session_state.forgot_user = f_user
                     st.session_state.auth_stage = "forgot_otp"
-                    st.success(f"🔐 Password Reset OTP Sent: **{otp}** (Simulated SMS)")
+                    st.success(f"🔐 Reset OTP: **{otp}** (Simulated)")
                 else:
                     st.error("Account not found with this mobile number/email.")
             else:
@@ -608,10 +625,8 @@ else:
                     </div>
                     """, unsafe_allow_html=True)
                     if st.button(f"Authorize {f_name} AutoPay", key=f"sub_{f_name}", type="primary", use_container_width=True):
-                        # RAZORPAY ORDER INTEGRATION (TEST MODE)
                         try:
-                            # Create Razorpay Order
-                            order_amount_paise = int(f_amt * 100) # Amount in paise
+                            order_amount_paise = int(f_amt * 100)
                             order_data = {
                                 "amount": order_amount_paise,
                                 "currency": "INR",
