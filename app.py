@@ -4,11 +4,19 @@ import pandas as pd
 import datetime
 import random
 import time
+import razorpay
 
 # --- PAGE SETUP ---
 st.set_page_config(page_title="GullakCoin Pro", page_icon="🪙", layout="wide")
 
-# --- CUSTOM CSS (Black Tabs, Green Text, Father-Child Nurturing Banner & RGB Opposite Styling) ---
+# --- RAZORPAY TEST CREDENTIALS ---
+RAZORPAY_KEY_ID = "rzp_test_TUUbjrOMmZPuzm"
+RAZORPAY_KEY_SECRET = "70Jxhkb09EjC5R8KN7j1n2mh"
+
+# Initialize Razorpay Client
+razorpay_client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
+
+# --- CUSTOM CSS (Black Tabs, Green Text, RGB Opposite Explore Buttons & Blue Bold Header Metrics) ---
 st.markdown("""
 <style>
     /* Global App Background & High Contrast Text */
@@ -19,6 +27,8 @@ st.markdown("""
     }
     [data-testid="stSidebar"] { background-color: #04120e; border-right: 1px solid #064e3b; }
     [data-testid="stSidebar"] * { color: #f8fafc !important; }
+    
+    /* Header Metrics Styling: Vibrant Blue, Larger Font & Bold */
     [data-testid="stMetricValue"] { 
         font-size: 30px !important; 
         color: #38bdf8 !important; 
@@ -297,7 +307,6 @@ if 'forgot_user' not in st.session_state: st.session_state.forgot_user = ""
 if not st.session_state.logged_in:
     st.write("")
     
-    # FATHER & CHILD PLANTING BANNER WITH COMPANY WEALTH PLANS ADVERTISEMENT
     ads_list = [
         "🌱 GullakCoin Seed (Target: ₹ 5,000) - Nurturing small savings into fruitful returns together!",
         "🌿 GullakCoin Growth (Target: ₹ 25,000) - Watch your family's future grow with dynamic venture allocations.",
@@ -599,11 +608,26 @@ else:
                     </div>
                     """, unsafe_allow_html=True)
                     if st.button(f"Authorize {f_name} AutoPay", key=f"sub_{f_name}", type="primary", use_container_width=True):
-                        add_subscription(username, title, target_amt, f_name, f_amt)
-                        st.success(f"✅ E-Mandate registered successfully for {title} via {f_name} SIP!")
-                        st.session_state.selected_plan = None
-                        time.sleep(2)
-                        st.rerun()
+                        # RAZORPAY ORDER INTEGRATION (TEST MODE)
+                        try:
+                            # Create Razorpay Order
+                            order_amount_paise = int(f_amt * 100) # Amount in paise
+                            order_data = {
+                                "amount": order_amount_paise,
+                                "currency": "INR",
+                                "payment_capture": 1
+                            }
+                            razorpay_order = razorpay_client.order.create(data=order_data)
+                            order_id = razorpay_order['id']
+                            
+                            st.success(f"🔗 Razorpay Order Created! (Test Order ID: `{order_id}`)")
+                            add_subscription(username, title, target_amt, f_name, f_amt)
+                            st.success(f"✅ E-Mandate registered successfully for {title} via {f_name} SIP!")
+                            st.session_state.selected_plan = None
+                            time.sleep(2)
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"Razorpay Error: {e}")
 
     elif menu == "📊 My Portfolio":
         st.subheader("Active Asset Allocation & Projections")
