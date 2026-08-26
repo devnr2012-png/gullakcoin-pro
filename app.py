@@ -8,7 +8,7 @@ import time
 # --- PAGE SETUP ---
 st.set_page_config(page_title="GullakCoin Pro", page_icon="🪙", layout="wide")
 
-# --- CUSTOM CSS (Black Tabs, Green Text, RGB Opposite Explore Buttons & Blue Bold Header Metrics) ---
+# --- CUSTOM CSS (Black Tabs, Green Text, Father-Child Nurturing Banner & RGB Opposite Styling) ---
 st.markdown("""
 <style>
     /* Global App Background & High Contrast Text */
@@ -19,8 +19,6 @@ st.markdown("""
     }
     [data-testid="stSidebar"] { background-color: #04120e; border-right: 1px solid #064e3b; }
     [data-testid="stSidebar"] * { color: #f8fafc !important; }
-    
-    /* Header Metrics Styling: Vibrant Blue, Larger Font & Bold */
     [data-testid="stMetricValue"] { 
         font-size: 30px !important; 
         color: #38bdf8 !important; 
@@ -124,14 +122,14 @@ st.markdown("""
         box-shadow: 0 25px 50px rgba(0, 0, 0, 0.7); max-width: 520px; margin: 0 auto;
     }
     
-    /* Natural Trees & Plant Watering Growth Image Banner Box */
-    .plant-watering-banner {
-        background: linear-gradient(rgba(4, 47, 34, 0.5), rgba(4, 47, 34, 0.5)), 
-                    url('https://images.unsplash.com/photo-1542273917363-3b1817f69a2d?auto=format&fit=crop&w=1200&q=80');
+    /* Father & Child Nurturing Plant Banner with Corporate Wealth Ad */
+    .nurturing-banner {
+        background: linear-gradient(rgba(4, 47, 34, 0.65), rgba(4, 47, 34, 0.65)), 
+                    url('https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?auto=format&fit=crop&w=1200&q=80');
         background-size: cover;
         background-position: center;
         border: 2px solid #34d399;
-        padding: 30px 20px;
+        padding: 28px 20px;
         border-radius: 16px;
         text-align: center;
         max-width: 520px;
@@ -139,7 +137,7 @@ st.markdown("""
         box-shadow: 0 10px 30px rgba(52, 211, 153, 0.35);
     }
     .banner-title {
-        font-size: 14px;
+        font-size: 13px;
         text-transform: uppercase;
         letter-spacing: 2px;
         color: #34d399;
@@ -148,10 +146,21 @@ st.markdown("""
         text-shadow: 0 2px 4px rgba(0,0,0,0.9);
     }
     .banner-text {
-        font-size: 18px;
+        font-size: 17px;
         font-weight: 700;
         color: #ffffff;
         text-shadow: 0 2px 6px rgba(0,0,0,0.95);
+    }
+    .ad-badge {
+        display: inline-block;
+        background: #fbbf24;
+        color: #061a14;
+        font-size: 11px;
+        font-weight: 900;
+        padding: 2px 8px;
+        border-radius: 4px;
+        margin-top: 8px;
+        text-transform: uppercase;
     }
 
     .logo-container { text-align: center; margin-bottom: 20px; }
@@ -288,19 +297,20 @@ if 'forgot_user' not in st.session_state: st.session_state.forgot_user = ""
 if not st.session_state.logged_in:
     st.write("")
     
-    # NATURAL FORESTS & WEALTH GROWTH BANNER
-    plans_list = [
-        "🌱 GullakCoin Seed (Target: ₹ 5,000) - Water your small savings to sprout fruitful returns!",
-        "🌿 GullakCoin Growth (Target: ₹ 25,000) - Nurture your wealth with dynamic venture allocations.",
-        "🌳 GullakCoin Plus (Target: ₹ 50,000) - Advanced mid-stage capital branching out securely.",
-        "🌲 GullakCoin Superplus (Target: ₹ 100,000) - Maximum institutional tree growth & robust yield."
+    # FATHER & CHILD PLANTING BANNER WITH COMPANY WEALTH PLANS ADVERTISEMENT
+    ads_list = [
+        "🌱 GullakCoin Seed (Target: ₹ 5,000) - Nurturing small savings into fruitful returns together!",
+        "🌿 GullakCoin Growth (Target: ₹ 25,000) - Watch your family's future grow with dynamic venture allocations.",
+        "🌳 GullakCoin Plus (Target: ₹ 50,000) - Advanced mid-stage capital branching out securely for generations.",
+        "🌲 GullakCoin Superplus (Target: ₹ 100,000) - Maximum institutional tree growth & robust financial yield."
     ]
-    active_flash = plans_list[int(time.time()) % len(plans_list)]
+    active_ad = ads_list[int(time.time()) % len(ads_list)]
     
     st.markdown(f"""
-        <div class="plant-watering-banner">
-            <div class="banner-title">🌲 Natural Forests & Wealth Growth 🌳</div>
-            <div class="banner-text">{active_flash}</div>
+        <div class="nurturing-banner">
+            <div class="banner-title">👨‍👦 Nurturing Wealth Together (Guiding the Next Generation)</div>
+            <div class="banner-text">{active_ad}</div>
+            <div class="ad-badge">✨ Featured Company Wealth Plan</div>
         </div>
     """, unsafe_allow_html=True)
     
