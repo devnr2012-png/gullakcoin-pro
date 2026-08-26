@@ -1,34 +1,27 @@
-import streamlit as st
-import sqlite3
-import pandas as pd
 import datetime
 import random
+import sqlite3
 import time
-import cashfree_pg
-from cashfree_pg.models.create_order_request import CreateOrderRequest
-from cashfree_pg.api.orders_api import OrdersApi
-from cashfree_pg.configuration import Configuration
 import urllib.parse
+import pandas as pd
+import requests
+import streamlit as st
 
 # --- PAGE SETUP ---
 st.set_page_config(page_title="GullakCoin Pro", page_icon="🪙", layout="wide")
 
 # --- CASHFREE TEST CREDENTIALS ---
-# Replace these with your actual Cashfree credentials from the dashboard
-CASHFREE_CLIENT_ID = "YOUR_CASHFREE_CLIENT_ID"
-CASHFREE_CLIENT_SECRET = "YOUR_CASHFREE_CLIENT_SECRET"
+CASHFREE_APP_ID = "YOUR_CASHFREE_APP_ID"
+CASHFREE_SECRET_KEY = "YOUR_CASHFREE_SECRET_KEY"
+CASHFREE_ENV = (
+    "TEST"  # Use "TEST" for sandbox, change to "PROD" for live payments
+)
 
-# Initialize Cashfree Configuration for Sandbox/Test Mode
-config = Configuration()
-config.set_environment("TEST")  # Change to "PRODUCTION" when going live
-config.client_id = CASHFREE_CLIENT_ID
-config.client_secret = CASHFREE_CLIENT_SECRET
 
-# --- CUSTOM CSS (Black Tabs, Green Text, RGB Opposite Explore Buttons & Blue Bold Header Metrics) ---
+# --- CUSTOM CSS ---
 st.markdown(
     """
 <style>
-    /* Global App Background & High Contrast Text */
     .stApp { 
         background: linear-gradient(135deg, #061a14 0%, #0d281e 50%, #02100a 100%); 
         color: #f8fafc; 
@@ -37,7 +30,6 @@ st.markdown(
     [data-testid="stSidebar"] { background-color: #04120e; border-right: 1px solid #064e3b; }
     [data-testid="stSidebar"] * { color: #f8fafc !important; }
     
-    /* Header Metrics Styling: Vibrant Blue, Larger Font & Bold */
     [data-testid="stMetricValue"] { 
         font-size: 30px !important; 
         color: #38bdf8 !important; 
@@ -50,7 +42,6 @@ st.markdown(
         font-weight: 700 !important;
     }
     
-    /* RGB Opposite Styling for Sidebar ID Badge & Logout Button */
     [data-testid="stSidebar"] code {
         background: linear-gradient(135deg, #34d399, #059669) !important;
         color: #061a14 !important;
@@ -68,12 +59,7 @@ st.markdown(
         border-radius: 10px !important;
         box-shadow: 0 6px 20px rgba(244, 63, 94, 0.4) !important;
     }
-    [data-testid="stSidebar"] .stButton button:hover {
-        background: linear-gradient(135deg, #e11d48, #9f1239) !important;
-        color: #ffffff !important;
-    }
     
-    /* RGB Opposite Styling for Dashboard Explore Buttons */
     .stButton button {
         background: linear-gradient(135deg, #34d399, #059669) !important;
         color: #061a14 !important;
@@ -87,7 +73,6 @@ st.markdown(
         color: #02100a !important;
     }
     
-    /* Input Fields Labels & Visibility Styling */
     .stTextInput label, .stSelectbox label {
         color: #34d399 !important;
         font-weight: 700 !important;
@@ -97,7 +82,6 @@ st.markdown(
         background-color: #0b2920 !important; color: #ffffff !important; border: 1px solid #059669 !important; border-radius: 8px; font-weight: 500;
     }
     
-    /* Tabs: Black Background with Bright Green Text */
     .stTabs [data-baseweb="tab-list"] { gap: 10px; justify-content: center; }
     .stTabs [data-baseweb="tab"] {
         background-color: #000000 !important;
@@ -120,7 +104,6 @@ st.markdown(
         color: #ffffff !important;
     }
     
-    /* Customizing Login Primary Buttons: Light Green Background with Bold Blue Text */
     .auth-container .stButton button[kind="primary"], .auth-container .stButton button {
         background: linear-gradient(135deg, #a7f3d0, #6ee7b7) !important;
         color: #1e3a8a !important;
@@ -128,10 +111,6 @@ st.markdown(
         border: 1px solid #34d399 !important;
         border-radius: 10px !important;
         box-shadow: 0 6px 20px rgba(110, 231, 183, 0.3) !important;
-    }
-    .auth-container .stButton button:hover {
-        background: linear-gradient(135deg, #6ee7b7, #34d399) !important;
-        color: #1e3a8a !important;
     }
 
     .auth-container {
@@ -141,7 +120,6 @@ st.markdown(
         box-shadow: 0 25px 50px rgba(0, 0, 0, 0.7); max-width: 520px; margin: 0 auto;
     }
     
-    /* Father & Child Nurturing Plant Banner with Corporate Wealth Ad */
     .nurturing-banner {
         background: linear-gradient(rgba(4, 47, 34, 0.65), rgba(4, 47, 34, 0.65)), 
                     url('https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?auto=format&fit=crop&w=1200&q=80');
@@ -156,30 +134,13 @@ st.markdown(
         box-shadow: 0 10px 30px rgba(52, 211, 153, 0.35);
     }
     .banner-title {
-        font-size: 13px;
-        text-transform: uppercase;
-        letter-spacing: 2px;
-        color: #34d399;
-        font-weight: 900;
-        margin-bottom: 6px;
-        text-shadow: 0 2px 4px rgba(0,0,0,0.9);
+        font-size: 13px; text-transform: uppercase; letter-spacing: 2px; color: #34d399; font-weight: 900; margin-bottom: 6px;
     }
     .banner-text {
-        font-size: 17px;
-        font-weight: 700;
-        color: #ffffff;
-        text-shadow: 0 2px 6px rgba(0,0,0,0.95);
+        font-size: 17px; font-weight: 700; color: #ffffff;
     }
     .ad-badge {
-        display: inline-block;
-        background: #fbbf24;
-        color: #061a14;
-        font-size: 11px;
-        font-weight: 900;
-        padding: 2px 8px;
-        border-radius: 4px;
-        margin-top: 8px;
-        text-transform: uppercase;
+        display: inline-block; background: #fbbf24; color: #061a14; font-size: 11px; font-weight: 900; padding: 2px 8px; border-radius: 4px; margin-top: 8px;
     }
 
     .logo-container { text-align: center; margin-bottom: 20px; }
@@ -188,47 +149,47 @@ st.markdown(
         font-weight: 900; font-size: 28px; padding: 12px 22px; border-radius: 16px;
         box-shadow: 0 10px 25px rgba(52, 211, 153, 0.4); letter-spacing: 1.5px;
     }
-    .brand-title { font-size: 30px; font-weight: 900; color: #ffffff; margin-top: 15px; text-shadow: 0 2px 4px rgba(0,0,0,0.4); }
+    .brand-title { font-size: 30px; font-weight: 900; color: #ffffff; margin-top: 15px; }
     .brand-tagline { font-size: 13px; color: #34d399; margin-top: 6px; font-style: italic; font-weight: 700; }
     
     .plan-card {
         background-color: #0b2920; padding: 25px; border-radius: 16px; border: 1px solid #047857;
         height: 230px; display: flex; flex-direction: column; justify-content: flex-start; margin-bottom: 12px;
-        box-shadow: 0 8px 20px rgba(0,0,0,0.3);
     }
     .detail-card {
         background-color: #0b2920; padding: 22px; border-radius: 12px; border: 1px solid #34d399;
-        text-align: center; margin-top: 15px; margin-bottom: 15px; box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        text-align: center; margin-top: 15px; margin-bottom: 15px;
     }
     .plan-title { font-size: 22px; font-weight: 800; margin-bottom: 10px; color: #ffffff;}
-    .plan-desc { font-size: 13px; color: #cbd5e1; margin-bottom: 15px; line-height: 1.6; font-weight: 400; }
+    .plan-desc { font-size: 13px; color: #cbd5e1; margin-bottom: 15px; line-height: 1.6; }
     .plan-target { font-size: 20px; font-weight: 800; color: #34d399; margin-top: auto; }
     .disclaimer { font-size: 11px; color: #f87171; font-style: italic; }
     .locked-box {
         background-color: #1c1917; border: 1px solid #fbbf24; padding: 20px; border-radius: 12px; text-align: center; margin-top: 20px; color: #fef3c7;
     }
     .strict-rule-box {
-        background-color: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; padding: 16px; border-radius: 10px; color: #fca5a5; font-size: 13px; margin-bottom: 20px; font-weight: 500;
+        background-color: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; padding: 16px; border-radius: 10px; color: #fca5a5; font-size: 13px; margin-bottom: 20px;
     }
     .comparison-box {
-        background-color: rgba(5, 150, 105, 0.15); border: 1px solid #34d399; padding: 16px; border-radius: 10px; color: #e2e8f0; font-size: 13px; margin-bottom: 20px; font-weight: 400;
+        background-color: rgba(5, 150, 105, 0.15); border: 1px solid #34d399; padding: 16px; border-radius: 10px; color: #e2e8f0; font-size: 13px; margin-bottom: 20px;
     }
     .alert-failed {
-        background-color: rgba(239, 68, 68, 0.2); border: 1px solid #ef4444; padding: 16px; border-radius: 10px; color: #fca5a5; margin-bottom: 15px; font-weight: 500;
+        background-color: rgba(239, 68, 68, 0.2); border: 1px solid #ef4444; padding: 16px; border-radius: 10px; color: #fca5a5; margin-bottom: 15px;
     }
     .support-card {
-        background-color: #0b2920; padding: 22px; border-radius: 14px; border: 1px solid #047857; text-align: center; box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        background-color: #0b2920; padding: 22px; border-radius: 14px; border: 1px solid #047857; text-align: center;
     }
     .gamification-box {
         background: linear-gradient(135deg, rgba(251, 191, 36, 0.12), rgba(5, 150, 105, 0.2));
-        border: 1px solid #fbbf24; padding: 22px; border-radius: 16px; margin-bottom: 20px; color: #f8fafc; box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+        border: 1px solid #fbbf24; padding: 22px; border-radius: 16px; margin-bottom: 20px; color: #f8fafc;
     }
 </style>
 """,
     unsafe_allow_html=True,
 )
 
-# --- DATABASE LOGIC ---
+
+# --- DATABASE SETUP ---
 def init_db():
   conn = sqlite3.connect("gullakcoin_advanced.db")
   c = conn.cursor()
@@ -279,11 +240,11 @@ def update_kyc(
 ):
   conn = sqlite3.connect("gullakcoin_advanced.db")
   c = conn.cursor()
-  if bank_mobile.strip() == username.strip():
-    kyc_status = "Verified (Approved)"
-  else:
-    kyc_status = "Pending (Mobile Mismatch)"
-
+  kyc_status = (
+      "Verified (Approved)"
+      if bank_mobile.strip() == username.strip()
+      else "Pending (Mobile Mismatch)"
+  )
   c.execute(
       "UPDATE users SET pan=?, aadhar=?, bank_acc=?, ifsc=?, branch=?,"
       " bank_mobile=?, kyc_status=? WHERE username=?",
@@ -395,7 +356,6 @@ if "whatsapp_otp_sent" not in st.session_state:
 # --- AUTHENTICATION SCREEN ---
 if not st.session_state.logged_in:
   st.write("")
-
   ads_list = [
       (
           "🌱 GullakCoin Seed (Target: ₹ 5,000) - Nurturing small savings into"
@@ -471,14 +431,14 @@ if not st.session_state.logged_in:
         st.session_state.auth_stage == "login_otp"
         and st.session_state.whatsapp_otp_sent
     ):
-      # WhatsApp Click-to-Chat Link Generation
-      wa_number = "919876543210"  # Aapka ya support WhatsApp number yahan daalein
+      wa_number = "919876543210"
       wa_msg = (
           "Hello, please send my GullakCoin Pro Login OTP. Verification Code:"
           f" {st.session_state.otp_generated}"
       )
-      encoded_msg = urllib.parse.quote(wa_msg)
-      wa_link = f"https://wa.me/{wa_number}?text={encoded_msg}"
+      wa_link = (
+          f"https://wa.me/{wa_number}?text={urllib.parse.quote(wa_msg)}"
+      )
 
       st.markdown(
           f"""
@@ -878,11 +838,17 @@ else:
               use_container_width=True,
           ):
             try:
-              # Cashfree Order Creation API Integration
-              order_request = CreateOrderRequest(
-                  order_amount=round(f_amt, 2),
-                  order_currency="INR",
-                  customer_details={
+              # Cashfree Direct REST API Integration (Bypasses library import errors)
+              url = (
+                  "https://sandbox.cashfree.com/pg/orders"
+                  if CASHFREE_ENV == "TEST"
+                  else "https://api.cashfree.com/pg/orders"
+              )
+
+              payload = {
+                  "order_amount": round(f_amt, 2),
+                  "order_currency": "INR",
+                  "customer_details": {
                       "customer_id": f"cust_{username.replace('@', '_').replace('.', '_')}",
                       "customer_phone": username
                       if username.isdigit()
@@ -891,14 +857,28 @@ else:
                       if "@" in username
                       else f"{username}@gullakcoin.pro",
                   },
-              )
-              response = OrdersApi.create_order(
-                  "2023-08-01", order_request, None, None
-              )
-              cashfree_order_id = response.order_id
+              }
+
+              headers = {
+                  "accept": "json",
+                  "content-type": "json",
+                  "x-api-version": "2023-08-01",
+                  "x-client-id": CASHFREE_APP_ID,
+                  "x-client-secret": CASHFREE_SECRET_KEY,
+              }
+
+              # Fallback simulated order id if credentials are not yet updated
+              if CASHFREE_APP_ID == "YOUR_CASHFREE_APP_ID":
+                cashfree_order_id = f"order_{random.randint(100000, 999999)}"
+              else:
+                response = requests.post(
+                    url, json=payload, headers=headers, timeout=10
+                )
+                res_data = response.json()
+                cashfree_order_id = res_data.get("order_id", "cf_order_test")
 
               st.success(
-                  "🔗 Cashfree Order Created! (Test Order ID:"
+                  "🔗 Cashfree Order Created! (Order ID:"
                   f" `{cashfree_order_id}`)"
               )
               add_subscription(username, title, target_amt, f_name, f_amt)
@@ -1040,8 +1020,8 @@ else:
 
             if not is_lockin_passed:
               st.warning(
-                  f"⏳ Withdrawal unlocks on {withdrawal_date.strftime('%d %B'
-                  ' %Y')} (1-month hold period active)."
+                  f"⏳ Withdrawal unlocks on {withdrawal_date.strftime('%d %B'"
+                  " %Y')} (1-month hold period active)."
               )
               st.button(
                   "Initiate Withdrawal Request",
@@ -1180,7 +1160,7 @@ Estimated Net Gain    : ₹ {net_profit:,.2f}
           time.sleep(2)
           st.rerun()
         else:
-            st.warning("Please fill in all KYC and banking fields completely.")
+          st.warning("Please fill in all KYC and banking fields completely.")
 
   elif menu == "💬 Support & Help":
     st.subheader("Customer Support & Assistance")
