@@ -1019,9 +1019,10 @@ else:
             st.metric("Achieved Maturity Value", f"₹ {maturity:,.2f}")
 
             if not is_lockin_passed:
+              unlock_str = withdrawal_date.strftime("%d %B %Y")
               st.warning(
-                  f"⏳ Withdrawal unlocks on {withdrawal_date.strftime('%d %B'"
-                  " %Y')} (1-month hold period active)."
+                  f"⏳ Withdrawal unlocks on {unlock_str} (1-month hold period"
+                  " active)."
               )
               st.button(
                   "Initiate Withdrawal Request",
