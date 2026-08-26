@@ -1040,8 +1040,8 @@ else:
 
             if not is_lockin_passed:
               st.warning(
-                  f"⏳ Withdrawal unlocks on {withdrawal_date.strftime('%d %B"
-                  " %Y')} (1-month hold period active)."
+                  f"⏳ Withdrawal unlocks on {withdrawal_date.strftime('%d %B'
+                  ' %Y')} (1-month hold period active)."
               )
               st.button(
                   "Initiate Withdrawal Request",
