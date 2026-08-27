@@ -1134,7 +1134,7 @@ Estimated Net Gain    : ₹ {net_profit:,.2f}
                 "Content-Type": "application/json",
             }
             payload = {
-                "model": "llama3-70b-8192",
+                "model": "llama-3.3-70b-versatile",
                 "messages": [
                     {
                         "role": "system",
