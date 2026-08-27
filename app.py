@@ -13,15 +13,13 @@ st.set_page_config(page_title="GullakCoin Pro", page_icon="🪙", layout="wide")
 # --- CASHFREE TEST CREDENTIALS ---
 CASHFREE_APP_ID = "YOUR_CASHFREE_APP_ID"
 CASHFREE_SECRET_KEY = "YOUR_CASHFREE_SECRET_KEY"
-CASHFREE_ENV = (
-    "TEST"  # Use "TEST" for sandbox, change to "PROD" for live payments
-)
+CASHFREE_ENV = "TEST"
 
 # --- DEEPSEEK API CONFIGURATION ---
 DEEPSEEK_API_KEY = "sk-f69bb01c512b47008885386e4a83b84f"
 
 
-# --- CUSTOM CSS (Fixed Text Visibility & White Chat Text) ---
+# --- CUSTOM CSS ---
 st.markdown(
     """
 <style>
@@ -82,7 +80,6 @@ st.markdown(
         font-size: 14px !important;
     }
     
-    /* Input Fields Text Color */
     .stTextInput input, .stSelectbox select {
         background-color: #0b2920 !important; 
         color: #38bdf8 !important; 
@@ -91,7 +88,6 @@ st.markdown(
         font-weight: 600;
     }
     
-    /* Chat Input Area Text Color */
     [data-testid="stChatInput"] textarea {
         color: #38bdf8 !important;
         background-color: #0b2920 !important;
@@ -103,7 +99,6 @@ st.markdown(
         border-radius: 12px;
     }
     
-    /* FORCE CHAT MESSAGE TEXT TO PURE WHITE */
     [data-testid="stChatMessage"] * {
         color: #ffffff !important;
     }
@@ -1131,59 +1126,47 @@ Estimated Net Gain    : ₹ {net_profit:,.2f}
 
       with st.chat_message("assistant"):
         with st.spinner("DeepSeek AI is analyzing..."):
+          ai_response = ""
           try:
-            if DEEPSEEK_API_KEY == "YOUR_DEEPSEEK_API_KEY":
-              # Dynamic Responses based on user input to avoid static repeating replies
-              query_lower = user_prompt.lower()
-              if "portfolio" in query_lower or "check" in query_lower:
-                ai_response = (
-                    f"📊 **Portfolio Analysis for {username}**: Your current"
-                    f" portfolio value is ₹ {portfolio_value:,.2f} with Target"
-                    f" Value ₹ {target_value:,.0f}. Keep your SIP streak active"
-                    " to unlock VIP perks!"
-                )
-              elif "sip" in query_lower or "optimize" in query_lower:
-                ai_response = (
-                    "💡 **SIP Optimization Tip**: Daily or Weekly SIPs help"
-                    " average out market volatility much better than monthly"
-                    " installments, while earning you a +1% AI Streak Bonus!"
-                )
-              elif "kyc" in query_lower:
-                ai_response = (
-                    f"🛡️ **KYC Status**: Your account KYC status is currently"
-                    f" **{kyc_status}**. Ensure your bank registered mobile"
-                    " number matches your login ID for instant approval."
-                )
-              else:
-                ai_response = (
-                    f"🤖 **DeepSeek AI Insights**: Regarding '{user_prompt}',"
-                    " GullakCoin Pro's 120-day structured model offers"
-                    " significantly higher returns through diversified startup"
-                    " allocations compared to traditional bank FDs."
-                )
+            url = "https://api.deepseek.com/chat/completions"
+            headers = {
+                "Authorization": f"Bearer {DEEPSEEK_API_KEY}",
+                "Content-Type": "application/json",
+            }
+            payload = {
+                "model": "deepseek-chat",
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": (
+                            "You are an expert financial wealth advisor for the"
+                            " GullakCoin Pro platform. Provide helpful, direct,"
+                            " and concise answers to user queries regarding"
+                            " investments, SIPs, plans, and portfolios."
+                        ),
+                    },
+                    {"role": "user", "content": user_prompt},
+                ],
+            }
+            resp = requests.post(
+                url, json=payload, headers=headers, timeout=15
+            )
+            res_json = resp.json()
+
+            if "choices" in res_json and len(res_json["choices"]) > 0:
+              ai_response = res_json["choices"][0]["message"]["content"]
             else:
-              url = "https://api.deepseek.com/chat/completions"
-              headers = {
-                  "Authorization": f"Bearer {DEEPSEEK_API_KEY}",
-                  "Content-Type": "application/json",
-              }
-              payload = {
-                  "model": "deepseek-chat",
-                  "messages": [
-                      {
-                          "role": "system",
-                          "content": (
-                              "You are an expert financial wealth advisor for"
-                              " GullakCoin Pro platform."
-                          ),
-                      },
-                      {"role": "user", "content": user_prompt},
-                  ],
-              }
-              resp = requests.post(
-                  url, json=payload, headers=headers, timeout=15
+              # Fallback if API returns an error message or insufficient balance
+              error_msg = res_json.get("error", {}).get(
+                  "message", "Unknown API Error"
               )
-              ai_response = resp.json()["choices"][0]["message"]["content"]
+              ai_response = (
+                  f"⚠️ **DeepSeek API Notice**: {error_msg}. \n\n*(Smart"
+                  " Fallback Response)*: To select a plan, go to 'Product"
+                  " offerings', pick a tier like GullakCoin Seed, and authorize"
+                  " your AutoPay E-Mandate. Your portfolio and EMI status are"
+                  " fully tracked under 'My Portfolio'."
+              )
           except Exception as e:
             ai_response = f"AI Connection Error: {e}"
 
