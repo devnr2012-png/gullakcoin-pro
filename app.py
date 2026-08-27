@@ -220,6 +220,48 @@ st.markdown(
 )
 
 
+# --- MICRO-PLUGINS (INLINE ARCHITECTURE) ---
+class GamificationPlugin:
+
+  @staticmethod
+  def render_widget(df_tx):
+    success_count = (
+        len(df_tx[df_tx["status"] == "Success"]) if not df_tx.empty else 0
+    )
+    streak_days = success_count * 3
+    badge_level = (
+        "🔥 Gold Investor Streak"
+        if success_count >= 3
+        else "🌱 Silver Streak (Build up to unlock +1% Yield Boost)"
+    )
+    st.markdown(
+        f"""
+            <div class="gamification-box">
+                <h4 style="color: #fbbf24; margin-top:0;">🤖 AI Yield Predictor & Gamification Plugin</h4>
+                <p style="margin-bottom: 5px;"><b>Active Streak:</b> {streak_days} Days Consistent AutoPay</p>
+                <p style="margin-bottom: 5px;"><b>Investor Status Badge:</b> {badge_level}</p>
+                <p style="font-size: 12px; color: #cbd5e1; margin-bottom:0;">Modular plugin architecture active.</p>
+            </div>
+            """,
+        unsafe_allow_html=True,
+    )
+
+
+class RiskAgentPlugin:
+
+  @staticmethod
+  def evaluate_query(query):
+    q = query.lower()
+    if any(k in q for k in ["fail", "payment fail", "insufficient"]):
+      return (
+          "⚠️ **Failed E-Mandate Resolution (Risk Plugin Agent)**: If an"
+          " installment fails due to insufficient bank balance, a **5-day grace"
+          " period** becomes active. Clear missed installments manually using"
+          " UPI/Card."
+      )
+    return None
+
+
 # --- DATABASE SETUP ---
 def init_db():
   conn = sqlite3.connect("gullakcoin_advanced.db")
@@ -873,27 +915,8 @@ else:
   elif menu == "📊 My Portfolio":
     st.subheader("Active Asset Allocation & Projections")
     if active_plan is not None:
-      success_count = (
-          len(df_tx[df_tx["status"] == "Success"]) if not df_tx.empty else 0
-      )
-      streak_days = success_count * 3
-      badge_level = (
-          "🔥 Gold Investor Streak"
-          if success_count >= 3
-          else "🌱 Silver Streak (Build up to unlock +1% Yield Boost)"
-      )
-
-      st.markdown(
-          f"""
-            <div class="gamification-box">
-                <h4 style="color: #fbbf24; margin-top:0;">🤖 AI Yield Predictor & Gamification</h4>
-                <p style="margin-bottom: 5px;"><b>Active Streak:</b> {streak_days} Days Consistent AutoPay</p>
-                <p style="margin-bottom: 5px;"><b>Investor Status Badge:</b> {badge_level}</p>
-                <p style="font-size: 12px; color: #cbd5e1; margin-bottom:0;">Maintain consistent deductions to qualify for AI-modeled yield bonuses and VIP fee waivers.</p>
-            </div>
-            """,
-          unsafe_allow_html=True,
-      )
+      # --- CALLING GAMIFICATION PLUGIN WIDGET ---
+      GamificationPlugin.render_widget(df_tx)
 
       failed_txs = df_tx[df_tx["status"] == "Failed (Insufficient Balance)"]
 
@@ -1086,19 +1109,12 @@ Estimated Net Gain    : ₹ {net_profit:,.2f}
           q = user_prompt.lower()
 
           def dispatch_agent_plugin(query):
+            # --- CALLING RISK AGENT PLUGIN ---
+            risk_response = RiskAgentPlugin.evaluate_query(query)
+            if risk_response:
+              return risk_response
+
             if any(
-                k in query
-                for k in ["mandate fail", "payment fail", "insufficient"]
-            ):
-              return (
-                  "⚠️ **Failed E-Mandate Resolution (Risk Agent)**: If an"
-                  " installment fails due to insufficient bank balance, a"
-                  " **5-day grace period** becomes active. You can immediately"
-                  " clear the missed installment manually using **UPI / Debit"
-                  " Card** from the **'My Portfolio'** tab to prevent tenure"
-                  " extension."
-              )
-            elif any(
                 k in query for k in ["what is e-mandate", "e-nach", "enach"]
             ):
               return (
