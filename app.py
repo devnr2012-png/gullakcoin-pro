@@ -474,24 +474,32 @@ if not st.session_state.logged_in:
         st.success("🔓 Biometric Passkey Verified Successfully!")
         time.sleep(1)
         st.rerun()
-      elif user_exists:
+      elif user_exists or l_user:
         otp = str(random.randint(100000, 999999))
         st.session_state.otp_generated = otp
         st.session_state.auth_stage = "login_otp"
         st.session_state.whatsapp_otp_sent = True
         st.success("✅ OTP Generated Successfully!")
       else:
-        st.error("Invalid credentials or user does not exist.")
+        st.error("Please enter your registered mobile number or email.")
 
     if (
         st.session_state.auth_stage == "login_otp"
         and st.session_state.whatsapp_otp_sent
     ):
+      # Target user ka apna registered mobile number use karega agar available ho, warna default owner number
+      target_phone = (
+          l_user.strip()
+          if l_user
+          and l_user.isdigit()
+          and len(l_user) >= 10
+          else MY_WHATSAPP_NUMBER
+      )
       wa_msg = (
           "Hello, please send my GullakCoin Pro Login OTP. Verification Code:"
           f" {st.session_state.otp_generated}"
       )
-      wa_link = f"https://wa.me/{MY_WHATSAPP_NUMBER}?text={urllib.parse.quote(wa_msg)}"
+      wa_link = f"https://wa.me/{target_phone}?text={urllib.parse.quote(wa_msg)}"
 
       st.markdown(
           f"""
