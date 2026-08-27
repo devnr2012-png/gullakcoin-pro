@@ -482,7 +482,6 @@ if "selected_plan" not in st.session_state:
 # --- AUTHENTICATION SCREEN ---
 if not st.session_state.logged_in:
   st.write("")
-  # Portfolio plans banner (ads list) successfully removed from here as requested.
 
   st.markdown("<div class='auth-container'>", unsafe_allow_html=True)
   st.markdown(
