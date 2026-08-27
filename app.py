@@ -113,28 +113,6 @@ st.markdown(
         color: #ffffff !important;
     }
     
-    .stTabs [data-baseweb="tab-list"] { gap: 10px; justify-content: center; }
-    .stTabs [data-baseweb="tab"] {
-        background-color: #000000 !important;
-        border-radius: 8px !important;
-        border: 1px solid #059669 !important;
-        padding: 10px 18px !important;
-    }
-    .stTabs [data-baseweb="tab"] p {
-        color: #34d399 !important;
-        font-weight: 800 !important;
-        font-size: 15px !important;
-        font-style: italic;
-    }
-    .stTabs [aria-selected="true"] {
-        background-color: #0b2920 !important;
-        border-color: #34d399 !important;
-        box-shadow: 0 0 15px rgba(52, 211, 153, 0.3);
-    }
-    .stTabs [aria-selected="true"] p {
-        color: #ffffff !important;
-    }
-    
     .auth-container .stButton button[kind="primary"], .auth-container .stButton button {
         background: linear-gradient(135deg, #a7f3d0, #6ee7b7) !important;
         color: #1e3a8a !important;
@@ -534,12 +512,12 @@ if not st.session_state.logged_in:
       unsafe_allow_html=True,
   )
 
-  tab1, tab2, tab3 = st.tabs(
-      ["Secure Login", "Create Account", "🔑 Forgot Password"]
+  auth_mode = st.radio(
+      "", ["Secure Login", "Create Account", "🔑 Forgot Password"], horizontal=True
   )
+  st.write("")
 
-  with tab1:
-    st.write("")
+  if auth_mode == "Secure Login":
     l_user = st.text_input("Registered Email or Mobile Number", key="l_user")
     l_pass = st.text_input("Secure Password", type="password", key="l_pass")
 
@@ -573,8 +551,7 @@ if not st.session_state.logged_in:
       else:
         st.error("Invalid credentials or user does not exist.")
 
-  with tab2:
-    st.write("")
+  elif auth_mode == "Create Account":
     s_user = st.text_input("Email or Mobile Number", key="s_user")
     s_pass = st.text_input("Create Secure Password", type="password", key="s_pass")
     st.write("")
@@ -609,14 +586,13 @@ if not st.session_state.logged_in:
           conn.close()
           st.success(
               f"🎉 Account created successfully! Your Investor ID is"
-              f" {investor_id}. Please go to Secure Login."
+              f" {investor_id}. Please switch to Secure Login."
           )
         conn.close()
       else:
         st.warning("Please fill in all fields.")
 
-  with tab3:
-    st.write("")
+  elif auth_mode == "🔑 Forgot Password":
     f_user = st.text_input(
         "Enter Your Registered Email or Mobile Number", key="f_user"
     )
@@ -638,7 +614,7 @@ if not st.session_state.logged_in:
           if new_pass_1 and new_pass_1 == new_pass_2:
             update_password(f_user, new_pass_1)
             st.success(
-                "🎉 Password updated successfully! Please go to Secure Login."
+                "🎉 Password updated successfully! Please switch to Secure Login."
             )
           else:
             st.error("Passwords do not match or empty.")
