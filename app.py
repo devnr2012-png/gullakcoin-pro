@@ -113,6 +113,21 @@ st.markdown(
         color: #ffffff !important;
     }
     
+    /* Permanent Fix: Expander selected white bar replaced with Sleek Dark Grey */
+    [data-testid="stExpander"] {
+        background-color: #0b2920 !important;
+        border: 1px solid #059669 !important;
+        border-radius: 10px !important;
+    }
+    [data-testid="stExpander"] summary {
+        background-color: #112d23 !important;
+        border-radius: 8px !important;
+        color: #ffffff !important;
+    }
+    [data-testid="stExpander"] summary:hover {
+        background-color: #16382c !important;
+    }
+    
     /* Permanent Fix: Hide empty containers */
     .element-container:empty, div[data-testid="stVerticalBlock"] > div:empty {
         display: none !important;
