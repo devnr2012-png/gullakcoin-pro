@@ -21,7 +21,7 @@ CASHFREE_ENV = (
 DEEPSEEK_API_KEY = "YOUR_DEEPSEEK_API_KEY"
 
 
-# --- CUSTOM CSS ---
+# --- CUSTOM CSS (Fixed Text Visibility for Inputs & Chat Boxes) ---
 st.markdown(
     """
 <style>
@@ -81,8 +81,26 @@ st.markdown(
         font-weight: 700 !important;
         font-size: 14px !important;
     }
+    
+    /* Fixing Input Text Color to Vibrant Blue (#38bdf8) so it's clearly readable */
     .stTextInput input, .stSelectbox select {
-        background-color: #0b2920 !important; color: #ffffff !important; border: 1px solid #059669 !important; border-radius: 8px; font-weight: 500;
+        background-color: #0b2920 !important; 
+        color: #38bdf8 !important; 
+        border: 1px solid #059669 !important; 
+        border-radius: 8px; 
+        font-weight: 600;
+    }
+    
+    /* Fixing Chat Input Text Area Color */
+    [data-testid="stChatInput"] textarea {
+        color: #38bdf8 !important;
+        background-color: #0b2920 !important;
+        font-weight: 600;
+    }
+    [data-testid="stChatInput"] {
+        background-color: #0b2920 !important;
+        border: 1px solid #34d399 !important;
+        border-radius: 12px;
     }
     
     .stTabs [data-baseweb="tab-list"] { gap: 10px; justify-content: center; }
