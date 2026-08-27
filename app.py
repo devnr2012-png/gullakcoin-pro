@@ -15,8 +15,8 @@ CASHFREE_APP_ID = "YOUR_CASHFREE_APP_ID"
 CASHFREE_SECRET_KEY = "YOUR_CASHFREE_SECRET_KEY"
 CASHFREE_ENV = "TEST"
 
-# --- DEEPSEEK API CONFIGURATION ---
-DEEPSEEK_API_KEY = "sk-f69bb01c512b47008885386e4a83b84f"
+# --- GROQ API CONFIGURATION ---
+GROQ_API_KEY = "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"
 
 
 # --- CUSTOM CSS ---
@@ -1102,7 +1102,7 @@ Estimated Net Gain    : ₹ {net_profit:,.2f}
       st.info("No ledger entries found.")
 
   elif menu == "🤖 AI Wealth Advisor":
-    st.subheader("🤖 DeepSeek AI Wealth Advisor")
+    st.subheader("🤖 Groq AI Wealth Advisor")
     st.write(
         "Ask anything about your investment strategy, startup allocation, or"
         " portfolio targets!"
@@ -1125,16 +1125,16 @@ Estimated Net Gain    : ₹ {net_profit:,.2f}
         st.markdown(user_prompt)
 
       with st.chat_message("assistant"):
-        with st.spinner("DeepSeek AI is analyzing..."):
+        with st.spinner("Groq AI is analyzing..."):
           ai_response = ""
           try:
-            url = "https://api.deepseek.com/chat/completions"
+            url = "https://api.groq.com/openai/v1/chat/completions"
             headers = {
-                "Authorization": f"Bearer {DEEPSEEK_API_KEY}",
+                "Authorization": f"Bearer {GROQ_API_KEY}",
                 "Content-Type": "application/json",
             }
             payload = {
-                "model": "deepseek-chat",
+                "model": "llama3-70b-8192",
                 "messages": [
                     {
                         "role": "system",
@@ -1156,17 +1156,10 @@ Estimated Net Gain    : ₹ {net_profit:,.2f}
             if "choices" in res_json and len(res_json["choices"]) > 0:
               ai_response = res_json["choices"][0]["message"]["content"]
             else:
-              # Fallback if API returns an error message or insufficient balance
               error_msg = res_json.get("error", {}).get(
                   "message", "Unknown API Error"
               )
-              ai_response = (
-                  f"⚠️ **DeepSeek API Notice**: {error_msg}. \n\n*(Smart"
-                  " Fallback Response)*: To select a plan, go to 'Product"
-                  " offerings', pick a tier like GullakCoin Seed, and authorize"
-                  " your AutoPay E-Mandate. Your portfolio and EMI status are"
-                  " fully tracked under 'My Portfolio'."
-              )
+              ai_response = f"⚠️ **Groq API Error**: {error_msg}"
           except Exception as e:
             ai_response = f"AI Connection Error: {e}"
 
