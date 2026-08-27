@@ -262,6 +262,62 @@ class RiskAgentPlugin:
     return None
 
 
+class FamilyWealthTreePlugin:
+
+  @staticmethod
+  def render_tree_dashboard(username):
+    st.subheader("🌳 AI Family Wealth & Generation Tree")
+    st.markdown(
+        "<p style='color: #cbd5e1;'>Nurturing your family's financial future"
+        " across generations. Add secondary seedlings or beneficiaries to track"
+        " dedicated micro-savings milestones.</p>",
+        unsafe_allow_html=True,
+    )
+
+    col1, col2 = st.columns(2)
+    with col1:
+      st.markdown("### 🌿 Add Beneficiary / Seedling")
+      with st.form("family_tree_form"):
+        b_name = st.text_input("Beneficiary Name (e.g., Child / Spouse)")
+        b_goal = st.selectbox(
+            "Milestone Goal",
+            [
+                "Higher Education",
+                "First Bike / Car",
+                "Wedding Fund",
+                "General Generational Wealth",
+            ],
+        )
+        b_target = st.number_input(
+            "Target Amount (₹)", min_value=1000, value=25000, step=5000
+        )
+        b_submit = st.form_submit_button(
+            "Plant New Generation Seed", type="primary"
+        )
+        if b_submit and b_name:
+          st.success(
+              f"🌱 Success! Secondary seedling for **{b_name}** ({b_goal}) has"
+              " been successfully added to your Family Wealth Tree."
+          )
+
+    with col2:
+      st.markdown("### 🌲 Active Generation Tree Status")
+      st.markdown(
+          """
+            <div style="background-color: #0b2920; padding: 20px; border-radius: 12px; border: 1px solid #34d399;">
+                <p style='color: #34d399; font-weight: bold; margin-bottom: 5px;'>🌱 Primary Tree: Root Portfolio</p>
+                <p style='color: #ffffff; font-size: 14px;'>Status: <b>Growing & Nurturing (1 Active SIP Milestone)</b></p>
+                <hr style='border-color: #047857;'>
+                <p style='color: #93c5fd; font-weight: bold; margin-bottom: 5px;'>🌿 Branching Seedlings:</p>
+                <ul style='color: #cbd5e1; font-size: 13px; padding-left: 20px;'>
+                    <li><b>Aarav Srivastava</b> (Higher Education) - Target: ₹ 50,000 [Status: Initial Sprout]</li>
+                </ul>
+            </div>
+            """,
+          unsafe_allow_html=True,
+      )
+
+
 # --- DATABASE SETUP ---
 def init_db():
   conn = sqlite3.connect("gullakcoin_advanced.db")
@@ -293,27 +349,6 @@ def init_db():
   )
   conn.commit()
   conn.close()
-
-
-def send_twilio_sms(to_number, message_body):
-  if not TWILIO_PHONE_NUMBER:
-    return False
-  url = f"https://api.twilio.com/2010-04-01/Accounts/{TWILIO_ACCOUNT_SID}/Messages.json"
-  payload = {
-      "To": to_number,
-      "From": TWILIO_PHONE_NUMBER,
-      "Body": message_body,
-  }
-  try:
-    response = requests.post(
-        url,
-        data=payload,
-        auth=(TWILIO_API_KEY_SID, TWILIO_API_SECRET),
-        timeout=5,
-    )
-    return response.status_code == 201
-  except Exception:
-    return False
 
 
 def send_telegram_alert(message):
@@ -707,6 +742,7 @@ else:
       [
           "📦 Product offerings",
           "📊 My Portfolio",
+          "🌳 Family Wealth Tree",
           "📝 Transaction History",
           "🤖 AI Wealth Advisor",
           "👤 Profile & KYC",
@@ -1053,6 +1089,9 @@ Estimated Net Gain    : ₹ {net_profit:,.2f}
           "No active capital allocations found. Explore product offerings to"
           " initiate a plan."
       )
+
+  elif menu == "🌳 Family Wealth Tree":
+    FamilyWealthTreePlugin.render_tree_dashboard(username)
 
   elif menu == "📝 Transaction History":
     st.subheader("Automated E-Mandate Audit Logs")
