@@ -17,6 +17,12 @@ CASHFREE_ENV = "TEST"
 TELEGRAM_BOT_TOKEN = "YOUR_TELEGRAM_BOT_TOKEN"
 TELEGRAM_CHAT_ID = "YOUR_TELEGRAM_CHAT_ID"
 
+# --- TWILIO SMS API CONFIGURATION ---
+TWILIO_ACCOUNT_SID = "AC6ee8959f0b00dd9d5b8648baeddda119"
+TWILIO_API_KEY_SID = "SK051e4ca445f1469c93174d5f794a0089"
+TWILIO_API_SECRET = "LTMfWNFvjS60bethokwAvmAdleQvgS0I"
+TWILIO_PHONE_NUMBER = "+17372212163"
+
 # --- OWNER CONTACT CONFIGURATION ---
 MY_WHATSAPP_NUMBER = "919140046797"
 MY_TELEGRAM_USERNAME = "9140046797"
@@ -247,6 +253,27 @@ def init_db():
   conn.close()
 
 
+def send_twilio_sms(to_number, message_body):
+  if not TWILIO_PHONE_NUMBER:
+    return False
+  url = f"https://api.twilio.com/2010-04-01/Accounts/{TWILIO_ACCOUNT_SID}/Messages.json"
+  payload = {
+      "To": to_number,
+      "From": TWILIO_PHONE_NUMBER,
+      "Body": message_body,
+  }
+  try:
+    response = requests.post(
+        url,
+        data=payload,
+        auth=(TWILIO_API_KEY_SID, TWILIO_API_SECRET),
+        timeout=5,
+    )
+    return response.status_code == 201
+  except Exception:
+    return False
+
+
 def send_telegram_alert(message):
   if TELEGRAM_BOT_TOKEN == "YOUR_TELEGRAM_BOT_TOKEN":
     return
@@ -388,6 +415,8 @@ if "current_user" not in st.session_state:
   st.session_state.current_user = ""
 if "forgot_user" not in st.session_state:
   st.session_state.forgot_user = ""
+if "selected_plan" not in st.session_state:
+  st.session_state.selected_plan = None
 
 # --- AUTHENTICATION SCREEN ---
 if not st.session_state.logged_in:
