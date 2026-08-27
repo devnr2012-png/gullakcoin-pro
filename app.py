@@ -3,7 +3,6 @@ import random
 import sqlite3
 import time
 import urllib.parse
-import fpdf
 import pandas as pd
 import requests
 import streamlit as st
@@ -418,7 +417,6 @@ def init_db():
       """CREATE TABLE IF NOT EXISTS transactions (
                  id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT, trans_type TEXT, category TEXT, amount REAL, status TEXT, plan_ref TEXT, date TEXT)"""
   )
-  # Check if plan_ref exists in transactions
   tx_cols = [
       col[1] for col in c.execute("PRAGMA table_info(transactions)").fetchall()
   ]
@@ -572,126 +570,57 @@ def log_failed_transaction(username, plan_name, installment_amt):
   )
 
 
-# --- PDF GENERATOR CLASS ---
-class PDFReport(fpdf.FPDF):
-
-  def header(self):
-    self.set_font("Arial", "B", 16)
-    self.set_text_color(5, 150, 105)
-    self.cell(0, 10, "GullakCoin Pro - Account & Portfolio Summary", 0, 1, "C")
-    self.set_font("Arial", "I", 10)
-    self.set_text_color(100, 100, 100)
-    self.cell(
-        0,
-        6,
-        "Official Certified Wealth Allocation & Maturity Report",
-        0,
-        1,
-        "C",
-    )
-    self.ln(5)
-
-  def footer(self):
-    self.set_y(-15)
-    self.set_font("Arial", "I", 8)
-    self.set_text_color(150, 150, 150)
-    self.cell(
-        0, 10, f"Page {self.page_no()} | GullakCoin Pro Secure Ledger", 0, 0, "C"
-    )
-
-
-def generate_pdf_summary(username, investor_id, kyc_status, df_sub, df_tx):
-  pdf = PDFReport()
-  pdf.add_page()
-  pdf.set_auto_page_break(auto=True, margin=15)
-
-  # User & Account Details Box
-  pdf.set_font("Arial", "B", 12)
-  pdf.set_text_color(20, 20, 20)
-  pdf.cell(0, 8, f"Investor Account ID: {investor_id}", 0, 1)
-  pdf.set_font("Arial", "", 10)
-  pdf.cell(
-      0,
-      6,
-      f"Registered User/Mobile: {username} | KYC Status: {kyc_status}",
-      0,
-      1,
+# --- TEXT REPORT GENERATOR (NO EXTERNAL DEPENDENCY) ---
+def generate_text_summary(username, investor_id, kyc_status, df_sub, df_tx):
+  report = []
+  report.append("==================================================")
+  report.append("      GULLAKCOIN PRO - ACCOUNT & PORTFOLIO SUMMARY")
+  report.append("==================================================")
+  report.append(f"Investor Account ID : {investor_id}")
+  report.append(f"Registered User/Mob : {username}")
+  report.append(f"KYC & Bank Status   : {kyc_status}")
+  report.append(
+      f"Report Generated On : {datetime.datetime.now().strftime('%d %B %Y, %H:%M')}"
   )
-  pdf.cell(
-      0,
-      6,
-      f"Report Generated On: {datetime.datetime.now().strftime('%d %B %Y, %H:%M')}",
-      0,
-      1,
-  )
-  pdf.ln(5)
+  report.append("--------------------------------------------------\n")
 
-  # Active Subscriptions / Portfolios Summary Table
-  pdf.set_font("Arial", "B", 12)
-  pdf.set_text_color(5, 150, 105)
-  pdf.cell(0, 8, "Active Portfolio Plans & Maturity Schedule", 0, 1)
-  pdf.set_font("Arial", "B", 9)
-  pdf.set_fill_color(230, 245, 235)
-  pdf.set_text_color(20, 20, 20)
-
-  pdf.cell(50, 7, "Plan Name", 1, 0, "C", True)
-  pdf.cell(30, 7, "Frequency", 1, 0, "C", True)
-  pdf.cell(30, 7, "Target (Rs)", 1, 0, "C", True)
-  pdf.cell(25, 7, "Maturity Date", 1, 0, "C", True)
-  pdf.cell(25, 7, "Withdrawal", 1, 0, "C", True)
-  pdf.cell(30, 7, "EMI / Deduction", 1, 1, "C", True)
-
-  pdf.set_font("Arial", "", 9)
+  report.append("ACTIVE PORTFOLIO PLANS & MATURITY SCHEDULE:")
+  report.append("--------------------------------------------------")
   if not df_sub.empty:
     for _, row in df_sub.iterrows():
       start_dt = pd.to_datetime(row["date"])
       comp_dt = start_dt + pd.Timedelta(days=90)
       w_dt = comp_dt + pd.Timedelta(days=30)
-
-      pdf.cell(50, 7, str(row["plan_name"]), 1, 0, "L")
-      pdf.cell(30, 7, str(row["frequency"]), 1, 0, "C")
-      pdf.cell(30, 7, f"Rs {row['target_amount']:,.0f}", 1, 0, "R")
-      pdf.cell(25, 7, comp_dt.strftime("%d-%m-%Y"), 1, 0, "C")
-      pdf.cell(25, 7, w_dt.strftime("%d-%m-%Y"), 1, 0, "C")
-      pdf.cell(30, 7, f"Rs {row['installment_amt']:,.2f}", 1, 1, "R")
+      report.append(f"• Plan Name       : {row['plan_name']}")
+      report.append(f"  Frequency       : {row['frequency']}")
+      report.append(f"  Target Amount   : Rs {row['target_amount']:,.0f}")
+      report.append(f"  Installment     : Rs {row['installment_amt']:,.2f}")
+      report.append(f"  Maturity Date   : {comp_dt.strftime('%d-%m-%Y')}")
+      report.append(f"  Withdrawal Date : {w_dt.strftime('%d-%m-%Y')}")
+      report.append("")
   else:
-    pdf.cell(190, 7, "No active portfolio subscriptions found.", 1, 1, "C")
+    report.append("No active portfolio subscriptions found.\n")
 
-  pdf.ln(5)
-
-  # Transaction Audit History Table
-  pdf.set_font("Arial", "B", 12)
-  pdf.set_text_color(5, 150, 105)
-  pdf.cell(0, 8, "Transaction & E-Mandate Audit History", 0, 1)
-  pdf.set_font("Arial", "B", 9)
-  pdf.set_fill_color(230, 245, 235)
-  pdf.set_text_color(20, 20, 20)
-
-  pdf.cell(35, 7, "Date & Time", 1, 0, "C", True)
-  pdf.cell(45, 7, "Plan Reference", 1, 0, "C", True)
-  pdf.cell(30, 7, "Type", 1, 0, "C", True)
-  pdf.cell(35, 7, "Amount (Rs)", 1, 0, "C", True)
-  pdf.cell(45, 7, "Status", 1, 1, "C", True)
-
-  pdf.set_font("Arial", "", 8)
+  report.append("--------------------------------------------------")
+  report.append("TRANSACTION & E-MANDATE AUDIT HISTORY:")
+  report.append("--------------------------------------------------")
   if not df_tx.empty:
     for _, row in df_tx.iterrows():
-      pdf.cell(35, 6, str(row["date"]), 1, 0, "C")
-      pdf.cell(
-          45,
-          6,
-          str(row["plan_ref"]) if pd.notnull(row["plan_ref"]) else "General",
-          1,
-          0,
-          "L",
+      p_ref = (
+          str(row["plan_ref"]) if pd.notnull(row["plan_ref"]) else "General"
       )
-      pdf.cell(30, 6, str(row["trans_type"]), 1, 0, "C")
-      pdf.cell(35, 6, f"Rs {row['amount']:,.2f}", 1, 0, "R")
-      pdf.cell(45, 6, str(row["status"]), 1, 1, "C")
+      report.append(
+          f"[{row['date']}] | Plan: {p_ref} | Type: {row['trans_type']}"
+          f" ({row['category']}) | Amt: Rs {row['amount']:,.2f} | Status:"
+          f" {row['status']}"
+      )
   else:
-    pdf.cell(190, 6, "No transaction records found.", 1, 1, "C")
+    report.append("No transaction records found.")
 
-  return pdf.output(dest="S").encode("latin1")
+  report.append("\n==================================================")
+  report.append("        End of Certified Account Summary Report")
+  report.append("==================================================")
+  return "\n".join(report)
 
 
 init_db()
@@ -890,7 +819,6 @@ else:
       else 0
   )
 
-  # Total target value across all subscribed plans
   total_target_value = (
       df_sub["target_amount"].sum() if not df_sub.empty else 0
   )
@@ -1026,7 +954,7 @@ else:
         """
         <div class="comparison-box">
             <b>💡 Multi-Plan E-Mandate Investment:</b><br>
-            You can select multiple startup tiers simultaneously (e.g., Seed + Growth + Superplus). Once you authorize E-Mandates for your selected plans, all active portfolios will appear together in your <b>'My Portfolio'</b> dashboard and certified PDF account summary.
+            You can select multiple startup tiers simultaneously (e.g., Seed + Growth + Superplus). Once you authorize E-Mandates for your selected plans, all active portfolios will appear together in your <b>'My Portfolio'</b> dashboard and certified account summary report.
         </div>
         """,
         unsafe_allow_html=True,
@@ -1169,8 +1097,8 @@ else:
 
       st.markdown("---")
 
-      # --- DOWNLOAD PDF ACCOUNT SUMMARY BUTTON ---
-      st.subheader("📄 Download Certified Account Summary PDF")
+      # --- DOWNLOAD ACCOUNT SUMMARY REPORT BUTTON ---
+      st.subheader("📄 Download Certified Account Summary Report")
       st.markdown(
           "<p style='color: #cbd5e1;'>Download your complete official account"
           " summary report containing plan-wise EMI breakdowns, target"
@@ -1178,14 +1106,14 @@ else:
           unsafe_allow_html=True,
       )
 
-      pdf_bytes = generate_pdf_summary(
+      report_text = generate_text_summary(
           username, investor_id, kyc_status, df_sub, df_tx
       )
       st.download_button(
-          label="📥 Download Account Summary Report (PDF)",
-          data=pdf_bytes,
-          file_name=f"GullakCoin_Account_Summary_{investor_id}.pdf",
-          mime="application/pdf",
+          label="📥 Download Account Summary Report (TXT)",
+          data=report_text,
+          file_name=f"GullakCoin_Account_Summary_{investor_id}.txt",
+          mime="text/plain",
           type="primary",
       )
 
@@ -1314,11 +1242,11 @@ else:
                   " lock-in passes, click **'Initiate Withdrawal Request'**"
                   " under **'My Portfolio'**."
               )
-            elif any(k in query for k in ["pdf", "summary", "download"]):
+            elif any(k in query for k in ["report", "summary", "download"]):
               return (
-                  "📄 **PDF Account Summary (Export Agent)**: Go to the **'My"
-                  " Portfolio'** tab to download your official certified PDF"
-                  " report with complete plan breakdowns."
+                  "📄 **Account Summary Report (Export Agent)**: Go to the"
+                  " **'My Portfolio'** tab to download your certified account"
+                  " summary report with complete plan breakdowns."
               )
             else:
               return (
@@ -1471,7 +1399,7 @@ else:
     st.subheader("❓ Frequently Asked Questions & Portfolio Guide")
     st.markdown(
         "<p style='color: #cbd5e1;'>Complete guidance on GullakCoin Pro's"
-        " automated multi-plan wealth model and PDF report exports.</p>",
+        " automated multi-plan wealth model and report exports.</p>",
         unsafe_allow_html=True,
     )
 
@@ -1482,7 +1410,7 @@ else:
           "A: Yes! Under the **'Product offerings'** tab, you can check boxes"
           " for multiple plans (e.g., Seed, Growth, Superplus) at once and"
           " authorize bulk E-Mandates. All selected plans will appear together"
-          " in your portfolio and PDF summary."
+          " in your portfolio and account summary report."
       )
 
     with st.expander(
@@ -1494,9 +1422,9 @@ else:
           " plan's E-Mandate hit."
       )
 
-    with st.expander("Q3: How do I download my Account Summary PDF?"):
+    with st.expander("Q3: How do I download my Account Summary Report?"):
       st.write(
-          "A: Go to the **'My Portfolio'** tab. Scroll down to the certified"
-          " export section and click **'📥 Download Account Summary Report"
-          " (PDF)'** to instantly save your complete statement."
+          "A: Go to the **'My Portfolio'** tab. Scroll down to the export"
+          " section and click **'📥 Download Account Summary Report (TXT)'**"
+          " to instantly save your complete statement."
       )
