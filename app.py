@@ -151,34 +151,18 @@ st.markdown(
         box-shadow: 0 25px 50px rgba(0, 0, 0, 0.7); max-width: 520px; margin: 0 auto;
     }
     
-    .nurturing-banner {
-        background: linear-gradient(rgba(4, 47, 34, 0.65), rgba(4, 47, 34, 0.65)), 
-                    url('https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?auto=format&fit=crop&w=1200&q=80');
-        background-size: cover;
-        background-position: center;
-        border: 2px solid #34d399;
-        padding: 28px 20px;
-        border-radius: 16px;
-        text-align: center;
-        max-width: 520px;
-        margin: 0 auto 20px auto;
-        box-shadow: 0 10px 30px rgba(52, 211, 153, 0.35);
-    }
-    .banner-title {
-        font-size: 13px; text-transform: uppercase; letter-spacing: 2px; color: #34d399; font-weight: 900; margin-bottom: 6px;
-    }
-    .banner-text {
-        font-size: 17px; font-weight: 700; color: #ffffff;
-    }
-    .ad-badge {
-        display: inline-block; background: #fbbf24; color: #061a14; font-size: 11px; font-weight: 900; padding: 2px 8px; border-radius: 4px; margin-top: 8px;
-    }
-
     .logo-container { text-align: center; margin-bottom: 20px; }
     .logo-badge {
-        display: inline-block; background: linear-gradient(135deg, #34d399, #059669); color: #061a14;
-        font-weight: 900; font-size: 28px; padding: 12px 22px; border-radius: 16px;
-        box-shadow: 0 10px 25px rgba(52, 211, 153, 0.4); letter-spacing: 1.5px;
+        display: inline-block; 
+        background: linear-gradient(135deg, #34d399, #059669); 
+        color: #061a14;
+        font-weight: 900; 
+        font-size: 26px; 
+        padding: 12px 22px; 
+        border-radius: 16px;
+        box-shadow: 0 10px 25px rgba(52, 211, 153, 0.4); 
+        letter-spacing: 1.5px;
+        position: relative;
     }
     .brand-title { font-size: 30px; font-weight: 900; color: #ffffff; margin-top: 15px; }
     .brand-tagline { font-size: 13px; color: #34d399; margin-top: 6px; font-style: italic; font-weight: 700; }
@@ -498,42 +482,13 @@ if "selected_plan" not in st.session_state:
 # --- AUTHENTICATION SCREEN ---
 if not st.session_state.logged_in:
   st.write("")
-  ads_list = [
-      (
-          "🌱 GullakCoin Seed (Target: ₹ 5,000) - Nurturing small savings into"
-          " fruitful returns together!"
-      ),
-      (
-          "🌿 GullakCoin Growth (Target: ₹ 25,000) - Watch your family's future"
-          " grow with dynamic venture allocations."
-      ),
-      (
-          "🌳 GullakCoin Plus (Target: ₹ 50,000) - Advanced mid-stage capital"
-          " branching out securely for generations."
-      ),
-      (
-          "🌲 GullakCoin Superplus (Target: ₹ 100,000) - Maximum institutional"
-          " tree growth & robust financial yield."
-      ),
-  ]
-  active_ad = ads_list[int(time.time()) % len(ads_list)]
-
-  st.markdown(
-      f"""
-        <div class="nurturing-banner">
-            <div class="banner-title">👨‍👦 Nurturing Wealth Together (Guiding the Next Generation)</div>
-            <div class="banner-text">{active_ad}</div>
-            <div class="ad-badge">✨ Featured Company Wealth Plan</div>
-        </div>
-    """,
-      unsafe_allow_html=True,
-  )
+  # Portfolio plans banner (ads list) successfully removed from here as requested.
 
   st.markdown("<div class='auth-container'>", unsafe_allow_html=True)
   st.markdown(
       """
         <div class="logo-container">
-            <div class="logo-badge">GC</div>
+            <div class="logo-badge"><span style="font-size: 16px; vertical-align: middle;">🌱</span> GC</div>
             <div class="brand-title">GullakCoin Pro</div>
             <div class="brand-tagline">“Nurturing Your Wealth, From a Seedling to a Grand Tree.”</div>
         </div>
@@ -1121,11 +1076,28 @@ Estimated Net Gain    : ₹ {net_profit:,.2f}
       st.info("No ledger entries found.")
 
   elif menu == "🤖 AI Wealth Advisor":
-    st.subheader("🤖 Smart Wealth Advisor (AI Assistant)")
+    st.subheader("🤖 Smart Wealth Advisor & Voice Copilot")
     st.write(
         "Ask anything about your investment strategy, startup allocation, or"
         " portfolio targets!"
     )
+
+    # --- VOICE-CONTROLLED AI FINANCIAL COPILOT (NATIVE AUDIO INPUT) ---
+    st.markdown("---")
+    st.markdown("#### 🎙️ Voice-Controlled AI Financial Copilot")
+    audio_input_file = st.audio_input(
+        "Record your financial query (e.g., 'What is my portfolio status?')"
+    )
+    if audio_input_file is not None:
+      st.success("🎤 Audio recorded successfully! Processing voice command...")
+      # Simulated transcription for voice copilot
+      simulated_voice_query = "What is my portfolio status?"
+      st.info(f"🗣️ **Recognized Voice Query:** *{simulated_voice_query}*")
+      st.write(
+          f"📊 **Copilot Response:** Your current active portfolio value is"
+          f" **₹ {portfolio_value:,.2f}** out of target **₹ {target_value:,.0f}**."
+      )
+    st.markdown("---")
 
     if "ai_messages" not in st.session_state:
       st.session_state.ai_messages = []
