@@ -113,11 +113,6 @@ st.markdown(
         color: #ffffff !important;
     }
     
-    /* Permanent Fix: Hide empty containers */
-    .element-container:empty, div[data-testid="stVerticalBlock"] > div:empty {
-        display: none !important;
-    }
-    
     /* Make Radio / Auth Mode text pure White */
     div[row-widget="stRadio"] label p, .stRadio label p {
         color: #ffffff !important;
@@ -139,7 +134,7 @@ st.markdown(
         backdrop-filter: blur(16px);
         padding: 35px 40px; 
         border-radius: 20px; 
-        border: 1px solid #10b981;
+        border: 3px solid #34d399;
         box-shadow: 0 25px 50px rgba(0, 0, 0, 0.7); 
         max-width: 520px; 
         margin: 10px auto 0 auto;
@@ -147,7 +142,7 @@ st.markdown(
     
     .growth-stage-banner {
         background: linear-gradient(135deg, #0b2920, #042f22);
-        border: 1px solid #34d399;
+        border: 2px solid #34d399;
         padding: 14px 20px;
         border-radius: 14px;
         text-align: center;
