@@ -614,10 +614,13 @@ else:
   def calculate_payout(target, freq):
     if "Daily" in freq:
       roi = 0.08
+      installments_count = 90
     elif "Weekly" in freq:
       roi = 0.10
+      installments_count = 13
     else:
       roi = 0.18
+      installments_count = 3
 
     success_tx_count = (
         len(df_tx[df_tx["status"] == "Success"]) if not df_tx.empty else 0
@@ -630,14 +633,22 @@ else:
     gst = fee * 0.18
     net_payout = maturity - fee - gst
     net_profit = net_payout - target
-    return maturity, fee, gst, net_payout, net_profit, streak_bonus
+    return (
+        maturity,
+        fee,
+        gst,
+        net_payout,
+        net_profit,
+        streak_bonus,
+        installments_count,
+    )
 
 
   if not df_sub.empty:
     active_plan = df_sub.iloc[0]
     target_value = active_plan["target_amount"]
     balance_target = max(target_value - portfolio_value, 0)
-    estimated_maturity, _, _, _, _, _ = calculate_payout(
+    estimated_maturity, _, _, _, _, _, _ = calculate_payout(
         target_value, active_plan["frequency"]
     )
 
@@ -808,9 +819,15 @@ else:
 
       f_cols = st.columns(3)
       for i, (f_name, f_amt, f_roi) in enumerate(freqs):
-        maturity, fee, gst, net_payout, net_profit, bonus = calculate_payout(
-            target_amt, f_name
-        )
+        (
+            maturity,
+            fee,
+            gst,
+            net_payout,
+            net_profit,
+            bonus,
+            total_installments,
+        ) = calculate_payout(target_amt, f_name)
         with f_cols[i]:
           bonus_text = (
               f" (+{bonus*100:.1f}% AI Streak Bonus)" if bonus > 0 else ""
@@ -827,7 +844,8 @@ else:
                             <span style='color: #fbbf24;'><b>Tenure:</b> 3 Months</span><br>
                             <span style='color: #fbbf24;'><b>Lock-in Period:</b> 1 Month</span><br>
                             <b>Platform Fee + GST:</b> -₹ {fee+gst:,.2f}<br><br>
-                            <span style='color: #34d399; font-size: 16px;'><b>Est. Net Payout: ₹ {net_payout:,.2f}</b></span>
+                            <span style='color: #34d399; font-size: 15px;'><b>Est. Net Payout: ₹ {net_payout:,.2f}</b></span><br>
+                            <span style='color: #38bdf8; font-size: 14px;'><b>Total EMIs to Deduct: {total_installments} Installments</b></span>
                         </p>
                     </div>
                     """,
@@ -973,7 +991,7 @@ else:
             )
 
           with w_col2:
-            maturity, fee, gst, net_payout, net_profit, _ = calculate_payout(
+            maturity, fee, gst, net_payout, net_profit, _, _ = calculate_payout(
                 target_value, active_plan["frequency"]
             )
             st.metric("Achieved Maturity Value", f"₹ {maturity:,.2f}")
