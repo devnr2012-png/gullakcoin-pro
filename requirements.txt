@@ -3,3 +3,4 @@ pandas
 razorpay
 cashfree-pg
 requests
+fpdf
