@@ -9,10 +9,12 @@ import streamlit as st
 # --- PAGE SETUP ---
 st.set_page_config(page_title="GullakCoin Pro", page_icon="🪙", layout="wide")
 
-# --- CASHFREE TEST CREDENTIALS ---
+# --- CASHFREE & TELEGRAM CONFIGURATION ---
 CASHFREE_APP_ID = "YOUR_CASHFREE_APP_ID"
 CASHFREE_SECRET_KEY = "YOUR_CASHFREE_SECRET_KEY"
 CASHFREE_ENV = "TEST"
+TELEGRAM_BOT_TOKEN = "YOUR_TELEGRAM_BOT_TOKEN"
+TELEGRAM_CHAT_ID = "YOUR_TELEGRAM_CHAT_ID"
 
 
 # --- CUSTOM CSS ---
@@ -239,6 +241,19 @@ def init_db():
   conn.close()
 
 
+def send_telegram_alert(message):
+  if TELEGRAM_BOT_TOKEN == "YOUR_TELEGRAM_BOT_TOKEN":
+    return  # Skip if not configured
+  url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+  payload = {"chat_id": TELEGRAM_CHAT_ID, "text": message}
+  try:
+    import requests
+
+    requests.post(url, json=payload, timeout=3)
+  except Exception:
+    pass
+
+
 def get_user_profile(username):
   conn = sqlite3.connect("gullakcoin_advanced.db")
   c = conn.cursor()
@@ -330,6 +345,10 @@ def add_subscription(
   )
   conn.commit()
   conn.close()
+  send_telegram_alert(
+      f"🚀 New E-Mandate Alert: {username} subscribed to {plan_name} via"
+      f" {frequency_text} SIP (Amt: ₹{installment_amt:,.2f})"
+  )
 
 
 def log_failed_transaction(username, installment_amt):
@@ -350,6 +369,10 @@ def log_failed_transaction(username, installment_amt):
   )
   conn.commit()
   conn.close()
+  send_telegram_alert(
+      f"⚠️ AutoPay Failure Alert: {username} installment of ₹{installment_amt:,.2f}"
+      " failed due to insufficient balance!"
+  )
 
 
 init_db()
@@ -424,6 +447,11 @@ if not st.session_state.logged_in:
     st.write("")
     l_user = st.text_input("Registered Email or Mobile Number", key="l_user")
     l_pass = st.text_input("Secure Password", type="password", key="l_pass")
+
+    # Biometric / Passkey Quick Login Simulator Toggle
+    use_biometric = st.checkbox(
+        "🔑 Quick Login via Device Passkey / Biometric Simulator"
+    )
     st.write("")
 
     if st.button("Request WhatsApp OTP", use_container_width=True, type="primary"):
@@ -435,14 +463,21 @@ if not st.session_state.logged_in:
       user_exists = c.fetchone()
       conn.close()
 
-      if user_exists:
+      if use_biometric and l_user:
+        # Bypass password check if biometric passkey simulator is checked
+        st.session_state.logged_in = True
+        st.session_state.current_user = l_user
+        st.success("🔓 Biometric Passkey Verified Successfully!")
+        time.sleep(1)
+        st.rerun()
+      elif user_exists:
         otp = str(random.randint(100000, 999999))
         st.session_state.otp_generated = otp
         st.session_state.auth_stage = "login_otp"
         st.session_state.whatsapp_otp_sent = True
         st.success("✅ OTP Generated Successfully!")
       else:
-        st.error("Invalid credentials.")
+        st.error("Invalid credentials or user does not exist.")
 
     if (
         st.session_state.auth_stage == "login_otp"
@@ -1329,17 +1364,17 @@ Estimated Net Gain    : ₹ {net_profit:,.2f}
           " identifier generated automatically upon account registration."
       )
     with st.expander(
-        "Q: Why should I lock my funds for 4 months instead of a Bank FD?"
+        "Why should I lock my funds for 4 months instead of a Bank FD?"
     ):
       st.write(
-          "A: Unlike traditional bank FDs yielding 3-7% p.a., GullakCoin Pro's"
+          "Unlike traditional bank FDs yielding 3-7% p.a., GullakCoin Pro's"
           " structured 120-day milestone model targets significantly higher net"
           " returns through startup allocations."
       )
     with st.expander(
-        "Q: What happens if my E-Mandate fails due to insufficient balance?"
+        "What happens if my E-Mandate fails due to insufficient balance?"
     ):
       st.write(
-          "A: You receive a 5-day grace period to clear your installment"
+          "You receive a 5-day grace period to clear your installment"
           " manually via UPI/Card in your 'My Portfolio' tab."
       )
