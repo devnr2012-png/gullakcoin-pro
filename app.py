@@ -570,7 +570,7 @@ def log_failed_transaction(username, plan_name, installment_amt):
   )
 
 
-# --- TEXT REPORT GENERATOR (NO EXTERNAL DEPENDENCY) ---
+# --- TEXT REPORT GENERATOR ---
 def generate_text_summary(username, investor_id, kyc_status, df_sub, df_tx):
   report = []
   report.append("==================================================")
@@ -828,13 +828,10 @@ else:
   def calculate_payout(target, freq):
     if "Daily" in freq:
       roi = 0.08
-      installments_count = 90
     elif "Weekly" in freq:
       roi = 0.10
-      installments_count = 13
     else:
       roi = 0.18
-      installments_count = 3
 
     success_tx_count = (
         len(df_tx[df_tx["status"] == "Success"]) if not df_tx.empty else 0
@@ -847,15 +844,7 @@ else:
     gst = fee * 0.18
     net_payout = maturity - fee - gst
     net_profit = net_payout - target
-    return (
-        maturity,
-        fee,
-        gst,
-        net_payout,
-        net_profit,
-        streak_bonus,
-        installments_count,
-    )
+    return maturity, fee, gst, net_payout, net_profit, streak_bonus
 
 
   # SIDEBAR
@@ -945,21 +934,16 @@ else:
     st.markdown("## Auto-Invest in Promising Startups.")
     st.markdown(
         "<p style='color: #cbd5e1; font-size: 16px; margin-bottom: 5px;'>Select"
-        " one or multiple structured allocation plans below, choose frequencies,"
-        " and authorize E-Mandates in bulk!</p>",
+        " new structured allocation plans below and authorize E-Mandates."
+        " (Note: Already running/active plans cannot be re-subscribed until"
+        " completed).</p>",
         unsafe_allow_html=True,
     )
 
-    st.markdown(
-        """
-        <div class="comparison-box">
-            <b>💡 Multi-Plan E-Mandate Investment:</b><br>
-            You can select multiple startup tiers simultaneously (e.g., Seed + Growth + Superplus). Once you authorize E-Mandates for your selected plans, all active portfolios will appear together in your <b>'My Portfolio'</b> dashboard and certified account summary report.
-        </div>
-        """,
-        unsafe_allow_html=True,
+    # Get list of already subscribed plan names for this user
+    active_plan_names = (
+        df_sub["plan_name"].tolist() if not df_sub.empty else []
     )
-    st.write("")
 
     plans_def = [
         (
@@ -992,30 +976,47 @@ else:
     ]
 
     selected_checkout_plans = []
-
     c_cols = st.columns(4)
+
     for i, (title, target_amt, desc, key_id) in enumerate(plans_def):
       with c_cols[i]:
+        is_already_active = title in active_plan_names
+        status_badge = (
+            "<span style='color: #34d399; font-weight: bold;'>✅ Active &"
+            " Running</span>"
+            if is_already_active
+            else "<span style='color: #38bdf8;'>🟢 Available</span>"
+        )
+
         st.markdown(
             f"""
                 <div class="plan-card">
                     <div class="plan-title">{title}</div>
                     <div class="plan-desc">{desc}</div>
+                    <div style="font-size: 12px; margin-bottom: 5px;">Status: {status_badge}</div>
                     <div class="plan-target">🎯 Target: ₹ {target_amt:,.0f}</div>
                 </div>
                 """,
             unsafe_allow_html=True,
         )
-        is_sel = st.checkbox(f"Select {title}", key=f"chk_{key_id}")
-        if is_sel:
-          selected_checkout_plans.append(
-              {"title": title, "target": target_amt}
+
+        if not is_already_active:
+          is_sel = st.checkbox(f"Select {title}", key=f"chk_{key_id}")
+          if is_sel:
+            selected_checkout_plans.append(
+                {"title": title, "target": target_amt}
+            )
+        else:
+          st.markdown(
+              "<p style='color: #94a3b8; font-size: 12px; font-style:"
+              " italic;'>E-Mandate already locked for this active plan.</p>",
+              unsafe_allow_html=True,
           )
 
     st.markdown("---")
     if selected_checkout_plans:
       st.subheader(
-          "⚡ Bulk E-Mandate Authorization for Selected Plans"
+          "⚡ E-Mandate Authorization for Newly Selected Plans"
           f" ({len(selected_checkout_plans)} Plans)"
       )
       bulk_freq = st.selectbox(
@@ -1024,8 +1025,7 @@ else:
       )
 
       if st.button(
-          "🚀 Authorize Bulk E-Mandates for All Selected Plans",
-          type="primary",
+          "🚀 Authorize E-Mandates for Newly Selected Plans", type="primary"
       ):
         try:
           for p in selected_checkout_plans:
@@ -1043,7 +1043,7 @@ else:
 
           st.success(
               f"✅ E-Mandate successfully authorized for {len(selected_checkout_plans)}"
-              " plans! Check 'My Portfolio'."
+              " new plan(s)! Check 'My Portfolio'."
           )
           time.sleep(2)
           st.rerun()
@@ -1051,8 +1051,8 @@ else:
           st.error(f"Error authorizing E-Mandate: {e}")
     else:
       st.info(
-          "👆 Check the box on any plan(s) above to configure and authorize"
-          " bulk E-Mandates."
+          "👆 Check the box on any available plan(s) above to configure and"
+          " authorize new E-Mandates."
       )
 
   elif menu == "📊 My Portfolio":
@@ -1218,13 +1218,14 @@ else:
                   "🔄 **What is an E-Mandate? (Protocol Agent)**: An E-Mandate"
                   " (AutoPay / E-NACH) is an automated authorization given to"
                   " your bank to deduct your chosen SIP amount across all your"
-                  " selected plans on schedule."
+                  " active plans on schedule."
               )
             elif any(k in query for k in ["product", "offering", "tiers"]):
               return (
                   "📦 **Product Offerings (Allocation Agent)**: GullakCoin Pro"
-                  " offers 4 structured startup allocation tiers that you can"
-                  " select and invest in simultaneously!"
+                  " offers 4 structured startup allocation tiers. Once a plan"
+                  " is running, you cannot re-subscribe until completion, but"
+                  " you can invest in other available tiers!"
               )
             elif any(k in query for k in ["120", "lock", "hold"]):
               return (
@@ -1404,13 +1405,14 @@ else:
     )
 
     with st.expander(
-        "Q1: Can I select and invest in multiple plans simultaneously?"
+        "Q1: Can I re-subscribe to a plan that is already active and running?"
     ):
       st.write(
-          "A: Yes! Under the **'Product offerings'** tab, you can check boxes"
-          " for multiple plans (e.g., Seed, Growth, Superplus) at once and"
-          " authorize bulk E-Mandates. All selected plans will appear together"
-          " in your portfolio and account summary report."
+          "A: No! Once you select a plan and authorize its E-Mandate, it"
+          " becomes active and running. You cannot re-select or authorize"
+          " another E-Mandate for that exact same plan until its full"
+          " accumulation and maturity cycle is completed. However, you are"
+          " free to select and invest in other available tiers."
       )
 
     with st.expander(
@@ -1418,13 +1420,13 @@ else:
     ):
       st.write(
           "A: Every deduction or transaction in your audit log is tagged with"
-          " its respective plan name (`plan_ref`), making it easy to see which"
-          " plan's E-Mandate hit."
+          " its respective plan name (`plan_ref`), making it easy to track"
+          " which plan's E-Mandate hit."
       )
 
     with st.expander("Q3: How do I download my Account Summary Report?"):
       st.write(
           "A: Go to the **'My Portfolio'** tab. Scroll down to the export"
           " section and click **'📥 Download Account Summary Report (TXT)'**"
-          " to instantly save your complete statement."
+          " to instantly save your complete multi-plan statement."
       )
