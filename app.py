@@ -113,11 +113,16 @@ st.markdown(
         color: #ffffff !important;
     }
     
+    /* Permanent Fix: Hide empty containers */
+    .element-container:empty, div[data-testid="stVerticalBlock"] > div:empty {
+        display: none !important;
+    }
+    
     /* Make Radio / Auth Mode text pure White */
     div[row-widget="stRadio"] label p, .stRadio label p {
         color: #ffffff !important;
         font-weight: 800 !important;
-        font-size: 16px !important;
+        font-size: 15px !important;
     }
     
     .auth-container .stButton button[kind="primary"], .auth-container .stButton button {
@@ -132,54 +137,61 @@ st.markdown(
     .auth-container {
         background: rgba(11, 41, 32, 0.92);
         backdrop-filter: blur(16px);
-        padding: 35px 40px; 
+        padding: 30px 35px; 
         border-radius: 20px; 
-        border: 3px solid #34d399;
+        border: 2px solid #34d399;
         box-shadow: 0 25px 50px rgba(0, 0, 0, 0.7); 
-        max-width: 520px; 
-        margin: 10px auto 0 auto;
+        width: 100%; 
+    }
+    
+    .left-hero-panel {
+        padding: 40px 20px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        height: 100%;
     }
     
     .growth-stage-banner {
         background: linear-gradient(135deg, #0b2920, #042f22);
-        border: 2px solid #34d399;
-        padding: 14px 20px;
+        border: 1px solid #34d399;
+        padding: 16px 20px;
         border-radius: 14px;
         text-align: center;
-        max-width: 520px;
-        margin: 0 auto 15px auto;
+        margin-top: 20px;
         box-shadow: 0 8px 25px rgba(52, 211, 153, 0.25);
     }
     .growth-stages {
         display: flex;
         justify-content: space-around;
         align-items: center;
-        font-size: 20px;
+        font-size: 24px;
         color: #34d399;
         font-weight: bold;
     }
     .growth-label {
-        font-size: 11px;
+        font-size: 12px;
         color: #93c5fd;
         text-transform: uppercase;
-        letter-spacing: 1px;
-        margin-top: 4px;
+        letter-spacing: 1.5px;
+        margin-top: 6px;
+        font-weight: 700;
     }
 
-    .logo-container { text-align: center; margin-bottom: 20px; }
+    .logo-container { text-align: center; margin-bottom: 15px; }
     .logo-badge {
         display: inline-block; 
         background: linear-gradient(135deg, #34d399, #059669); 
         color: #061a14;
         font-weight: 900; 
-        font-size: 34px; 
-        padding: 16px 30px; 
-        border-radius: 20px;
-        box-shadow: 0 12px 30px rgba(52, 211, 153, 0.5); 
-        letter-spacing: 2px;
+        font-size: 28px; 
+        padding: 12px 24px; 
+        border-radius: 16px;
+        box-shadow: 0 10px 25px rgba(52, 211, 153, 0.4); 
+        letter-spacing: 1.5px;
     }
-    .brand-title { font-size: 34px; font-weight: 900; color: #ffffff; margin-top: 15px; }
-    .brand-tagline { font-size: 14px; color: #34d399; margin-top: 6px; font-style: italic; font-weight: 700; }
+    .brand-title { font-size: 28px; font-weight: 900; color: #ffffff; margin-top: 12px; }
+    .brand-tagline { font-size: 13px; color: #34d399; margin-top: 4px; font-style: italic; font-weight: 700; }
     
     .plan-card {
         background-color: #0b2920; padding: 25px; border-radius: 16px; border: 1px solid #047857;
@@ -493,144 +505,164 @@ if "forgot_user" not in st.session_state:
 if "selected_plan" not in st.session_state:
   st.session_state.selected_plan = None
 
-# --- AUTHENTICATION SCREEN ---
+# --- AUTHENTICATION SCREEN (SPLIT LAYOUT: LEFT HERO, RIGHT AUTH) ---
 if not st.session_state.logged_in:
-  st.markdown(
-      """
-        <div class="growth-stage-banner">
-            <div class="growth-stages">
-                <span>🌱</span> ➔ <span>🌿</span> ➔ <span>🌳</span> ➔ <span>🌲</span>
+  col_left, col_right = st.columns([1.1, 1.1], gap="large")
+
+  with col_left:
+    st.markdown(
+        """
+        <div class="left-hero-panel">
+            <h1 style="color: #ffffff; font-size: 42px; font-weight: 900; line-height: 1.2; margin-bottom: 10px;">
+                Nurturing Wealth <br><span style="color: #34d399;">Across Generations</span>
+            </h1>
+            <p style="color: #cbd5e1; font-size: 16px; line-height: 1.6; margin-bottom: 25px;">
+                GullakCoin Pro is a next-generation structured milestone wealth platform. Watch your small savings grow from a delicate seedling into a majestic financial tree through automated startup allocations.
+            </p>
+            <div class="growth-stage-banner" style="text-align: left; padding: 20px;">
+                <div class="growth-stages" style="justify-content: flex-start; gap: 20px;">
+                    <span>🌱 Seedling</span> ➔ <span>🌿 Growth</span> ➔ <span>🌳 Plus</span> ➔ <span>🌲 Superplus</span>
+                </div>
+                <div class="growth-label" style="text-align: left; margin-top: 8px;">Automated 120-Day Milestone Wealth Cycles</div>
             </div>
-            <div class="growth-label">Wealth Growth Stage: Seedling to Grand Tree</div>
         </div>
     """,
-      unsafe_allow_html=True,
-  )
+        unsafe_allow_html=True,
+    )
 
-  st.markdown("<div class='auth-container'>", unsafe_allow_html=True)
-  st.markdown(
-      """
+  with col_right:
+    st.markdown("<div class='auth-container'>", unsafe_allow_html=True)
+    st.markdown(
+        """
         <div class="logo-container">
-            <div class="logo-badge"><span style="font-size: 22px; vertical-align: middle;">🌱</span> GC</div>
+            <div class="logo-badge"><span style="font-size: 24px; vertical-align: middle;">🌱</span> GC</div>
             <div class="brand-title">GullakCoin Pro</div>
             <div class="brand-tagline">“Nurturing Your Wealth, From a Seedling to a Grand Tree.”</div>
         </div>
     """,
-      unsafe_allow_html=True,
-  )
+        unsafe_allow_html=True,
+    )
 
-  auth_mode = st.radio(
-      "", ["Secure Login", "Create Account", "🔑 Forgot Password"], horizontal=True
-  )
-  st.write("")
-
-  if auth_mode == "Secure Login":
-    l_user = st.text_input("Registered Email or Mobile Number", key="l_user")
-    l_pass = st.text_input("Secure Password", type="password", key="l_pass")
-
-    # Biometric / Passkey Quick Login Simulator Toggle
-    use_biometric = st.checkbox(
-        "🔑 Quick Login via Device Passkey / Biometric Simulator"
+    auth_mode = st.radio(
+        "", ["Secure Login", "Create Account", "🔑 Forgot Password"], horizontal=True
     )
     st.write("")
 
-    if st.button("Login to Dashboard", use_container_width=True, type="primary"):
-      conn = sqlite3.connect("gullakcoin_advanced.db")
-      c = conn.cursor()
-      c.execute(
-          "SELECT * FROM users WHERE username=? AND password=?", (l_user, l_pass)
+    if auth_mode == "Secure Login":
+      l_user = st.text_input("Registered Email or Mobile Number", key="l_user")
+      l_pass = st.text_input("Secure Password", type="password", key="l_pass")
+
+      # Biometric / Passkey Quick Login Simulator Toggle
+      use_biometric = st.checkbox(
+          "🔑 Quick Login via Device Passkey / Biometric Simulator"
       )
-      user_exists = c.fetchone()
-      conn.close()
+      st.write("")
 
-      if use_biometric and l_user:
-        st.session_state.logged_in = True
-        st.session_state.current_user = l_user
-        st.success("🔓 Biometric Passkey Verified Successfully!")
-        time.sleep(1)
-        st.rerun()
-      elif user_exists:
-        st.session_state.logged_in = True
-        st.session_state.current_user = l_user
-        st.success("✅ Login Successful! Redirecting...")
-        time.sleep(1)
-        st.rerun()
-      else:
-        st.error("Invalid credentials or user does not exist.")
-
-  elif auth_mode == "Create Account":
-    s_user = st.text_input("Email or Mobile Number", key="s_user")
-    s_pass = st.text_input("Create Secure Password", type="password", key="s_pass")
-    st.write("")
-
-    if st.button("Register Account", use_container_width=True):
-      if s_user and s_pass:
+      if st.button(
+          "Login to Dashboard", use_container_width=True, type="primary"
+      ):
         conn = sqlite3.connect("gullakcoin_advanced.db")
         c = conn.cursor()
-        c.execute("SELECT * FROM users WHERE username=?", (s_user,))
-        if c.fetchone():
-          st.error("Account already exists.")
+        c.execute(
+            "SELECT * FROM users WHERE username=? AND password=?",
+            (l_user, l_pass),
+        )
+        user_exists = c.fetchone()
+        conn.close()
+
+        if use_biometric and l_user:
+          st.session_state.logged_in = True
+          st.session_state.current_user = l_user
+          st.success("🔓 Biometric Passkey Verified Successfully!")
+          time.sleep(1)
+          st.rerun()
+        elif user_exists:
+          st.session_state.logged_in = True
+          st.session_state.current_user = l_user
+          st.success("✅ Login Successful! Redirecting...")
+          time.sleep(1)
+          st.rerun()
         else:
-          investor_id = f"GC-PRO-{random.randint(100000, 999900)}"
-          c.execute(
-              "INSERT INTO users (username, password, investor_id, kyc_status,"
-              " pan, aadhar, bank_acc, ifsc, branch, bank_mobile) VALUES (?, ?,"
-              " ?, ?, ?, ?, ?, ?, ?, ?)",
-              (
-                  s_user,
-                  s_pass,
-                  investor_id,
-                  "Pending",
-                  "",
-                  "",
-                  "",
-                  "",
-                  "",
-                  "",
-              ),
-          )
-          conn.commit()
-          conn.close()
-          st.success(
-              f"🎉 Account created successfully! Your Investor ID is"
-              f" {investor_id}. Please switch to Secure Login."
-          )
-        conn.close()
-      else:
-        st.warning("Please fill in all fields.")
+          st.error("Invalid credentials or user does not exist.")
 
-  elif auth_mode == "🔑 Forgot Password":
-    f_user = st.text_input(
-        "Enter Your Registered Email or Mobile Number", key="f_user"
-    )
-    new_pass_1 = st.text_input("New Password", type="password", key="n_pass1")
-    new_pass_2 = st.text_input(
-        "Confirm New Password", type="password", key="n_pass2"
-    )
-    st.write("")
+    elif auth_mode == "Create Account":
+      s_user = st.text_input("Email or Mobile Number", key="s_user")
+      s_pass = st.text_input(
+          "Create Secure Password", type="password", key="s_pass"
+      )
+      st.write("")
 
-    if st.button("Reset Password & Save", type="primary", use_container_width=True):
-      if f_user:
-        conn = sqlite3.connect("gullakcoin_advanced.db")
-        c = conn.cursor()
-        c.execute("SELECT * FROM users WHERE username=?", (f_user,))
-        user_record = c.fetchone()
-        conn.close()
-
-        if user_record:
-          if new_pass_1 and new_pass_1 == new_pass_2:
-            update_password(f_user, new_pass_1)
-            st.success(
-                "🎉 Password updated successfully! Please switch to Secure Login."
-            )
+      if st.button("Register Account", use_container_width=True):
+        if s_user and s_pass:
+          conn = sqlite3.connect("gullakcoin_advanced.db")
+          c = conn.cursor()
+          c.execute("SELECT * FROM users WHERE username=?", (s_user,))
+          if c.fetchone():
+            st.error("Account already exists.")
           else:
-            st.error("Passwords do not match or empty.")
+            investor_id = f"GC-PRO-{random.randint(100000, 999900)}"
+            c.execute(
+                "INSERT INTO users (username, password, investor_id,"
+                " kyc_status, pan, aadhar, bank_acc, ifsc, branch, bank_mobile)"
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (
+                    s_user,
+                    s_pass,
+                    investor_id,
+                    "Pending",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                ),
+            )
+            conn.commit()
+            conn.close()
+            st.success(
+                f"🎉 Account created successfully! Your Investor ID is"
+                f" {investor_id}. Please switch to Secure Login."
+            )
+          conn.close()
         else:
-          st.error("Account not found with this mobile number/email.")
-      else:
-        st.warning("Please enter your registered number or email.")
+          st.warning("Please fill in all fields.")
 
-  st.markdown("</div>", unsafe_allow_html=True)
+    elif auth_mode == "🔑 Forgot Password":
+      f_user = st.text_input(
+          "Enter Your Registered Email or Mobile Number", key="f_user"
+      )
+      new_pass_1 = st.text_input("New Password", type="password", key="n_pass1")
+      new_pass_2 = st.text_input(
+          "Confirm New Password", type="password", key="n_pass2"
+      )
+      st.write("")
+
+      if st.button(
+          "Reset Password & Save", type="primary", use_container_width=True
+      ):
+        if f_user:
+          conn = sqlite3.connect("gullakcoin_advanced.db")
+          c = conn.cursor()
+          c.execute("SELECT * FROM users WHERE username=?", (f_user,))
+          user_record = c.fetchone()
+          conn.close()
+
+          if user_record:
+            if new_pass_1 and new_pass_1 == new_pass_2:
+              update_password(f_user, new_pass_1)
+              st.success(
+                  "🎉 Password updated successfully! Please switch to Secure"
+                  " Login."
+              )
+            else:
+              st.error("Passwords do not match or empty.")
+          else:
+            st.error("Account not found with this mobile number/email.")
+        else:
+          st.warning("Please enter your registered number or email.")
+
+    st.markdown("</div>", unsafe_allow_html=True)
 
 # --- MAIN DASHBOARD ---
 else:
