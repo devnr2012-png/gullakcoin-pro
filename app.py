@@ -152,9 +152,35 @@ st.markdown(
         border: 1px solid #10b981;
         box-shadow: 0 25px 50px rgba(0, 0, 0, 0.7); 
         max-width: 520px; 
-        margin: -40px auto 0 auto !important;
+        margin: 10px auto 0 auto;
     }
     
+    .growth-stage-banner {
+        background: linear-gradient(135deg, #0b2920, #042f22);
+        border: 1px solid #34d399;
+        padding: 14px 20px;
+        border-radius: 14px;
+        text-align: center;
+        max-width: 520px;
+        margin: 0 auto 15px auto;
+        box-shadow: 0 8px 25px rgba(52, 211, 153, 0.25);
+    }
+    .growth-stages {
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        font-size: 20px;
+        color: #34d399;
+        font-weight: bold;
+    }
+    .growth-label {
+        font-size: 11px;
+        color: #93c5fd;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-top: 4px;
+    }
+
     .logo-container { text-align: center; margin-bottom: 15px; }
     .logo-badge {
         display: inline-block; 
@@ -484,6 +510,18 @@ if "selected_plan" not in st.session_state:
 
 # --- AUTHENTICATION SCREEN ---
 if not st.session_state.logged_in:
+  st.markdown(
+      """
+        <div class="growth-stage-banner">
+            <div class="growth-stages">
+                <span>🌱</span> ➔ <span>🌿</span> ➔ <span>🌳</span> ➔ <span>🌲</span>
+            </div>
+            <div class="growth-label">Wealth Growth Stage: Seedling to Grand Tree</div>
+        </div>
+    """,
+      unsafe_allow_html=True,
+  )
+
   st.markdown("<div class='auth-container'>", unsafe_allow_html=True)
   st.markdown(
       """
