@@ -113,9 +113,16 @@ st.markdown(
         color: #ffffff !important;
     }
     
-    /* Permanent Fix: Hide empty containers and unused borders */
+    /* Permanent Fix: Hide empty containers */
     .element-container:empty, div[data-testid="stVerticalBlock"] > div:empty {
         display: none !important;
+    }
+    
+    /* Make Radio / Auth Mode text pure White */
+    div[row-widget="stRadio"] label p, .stRadio label p {
+        color: #ffffff !important;
+        font-weight: 800 !important;
+        font-size: 16px !important;
     }
     
     .auth-container .stButton button[kind="primary"], .auth-container .stButton button {
@@ -130,7 +137,7 @@ st.markdown(
     .auth-container {
         background: rgba(11, 41, 32, 0.92);
         backdrop-filter: blur(16px);
-        padding: 30px 40px; 
+        padding: 35px 40px; 
         border-radius: 20px; 
         border: 1px solid #10b981;
         box-shadow: 0 25px 50px rgba(0, 0, 0, 0.7); 
@@ -164,20 +171,20 @@ st.markdown(
         margin-top: 4px;
     }
 
-    .logo-container { text-align: center; margin-bottom: 15px; }
+    .logo-container { text-align: center; margin-bottom: 20px; }
     .logo-badge {
         display: inline-block; 
         background: linear-gradient(135deg, #34d399, #059669); 
         color: #061a14;
         font-weight: 900; 
-        font-size: 26px; 
-        padding: 12px 22px; 
-        border-radius: 16px;
-        box-shadow: 0 10px 25px rgba(52, 211, 153, 0.4); 
-        letter-spacing: 1.5px;
+        font-size: 34px; 
+        padding: 16px 30px; 
+        border-radius: 20px;
+        box-shadow: 0 12px 30px rgba(52, 211, 153, 0.5); 
+        letter-spacing: 2px;
     }
-    .brand-title { font-size: 30px; font-weight: 900; color: #ffffff; margin-top: 15px; }
-    .brand-tagline { font-size: 13px; color: #34d399; margin-top: 6px; font-style: italic; font-weight: 700; }
+    .brand-title { font-size: 34px; font-weight: 900; color: #ffffff; margin-top: 15px; }
+    .brand-tagline { font-size: 14px; color: #34d399; margin-top: 6px; font-style: italic; font-weight: 700; }
     
     .plan-card {
         background-color: #0b2920; padding: 25px; border-radius: 16px; border: 1px solid #047857;
@@ -509,7 +516,7 @@ if not st.session_state.logged_in:
   st.markdown(
       """
         <div class="logo-container">
-            <div class="logo-badge"><span style="font-size: 16px; vertical-align: middle;">🌱</span> GC</div>
+            <div class="logo-badge"><span style="font-size: 22px; vertical-align: middle;">🌱</span> GC</div>
             <div class="brand-title">GullakCoin Pro</div>
             <div class="brand-tagline">“Nurturing Your Wealth, From a Seedling to a Grand Tree.”</div>
         </div>
