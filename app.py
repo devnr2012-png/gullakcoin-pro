@@ -197,9 +197,9 @@ st.markdown(
         background-color: #0b2920; padding: 25px; border-radius: 16px; border: 1px solid #047857;
         height: 230px; display: flex; flex-direction: column; justify-content: flex-start; margin-bottom: 12px;
     }
-    .detail-card {
-        background-color: #0b2920; padding: 22px; border-radius: 12px; border: 1px solid #34d399;
-        text-align: center; margin-top: 15px; margin-bottom: 15px;
+    .calc-card {
+        background-color: rgba(5, 150, 105, 0.12); padding: 20px; border-radius: 14px; border: 1px solid #34d399;
+        margin-top: 15px; margin-bottom: 15px;
     }
     .plan-title { font-size: 22px; font-weight: 800; margin-bottom: 10px; color: #ffffff;}
     .plan-desc { font-size: 13px; color: #cbd5e1; margin-bottom: 15px; line-height: 1.6; }
@@ -574,7 +574,7 @@ def log_failed_transaction(username, plan_name, installment_amt):
 def generate_text_summary(username, investor_id, kyc_status, df_sub, df_tx):
   report = []
   report.append("==================================================")
-  report.append("      GULLAKCOIN PRO - ACCOUNT & PORTFOLIO SUMMARY")
+  report.append("      GULLAKCOIN PRO - STATEMENT OF ACCOUNT")
   report.append("==================================================")
   report.append(f"Investor Account ID : {investor_id}")
   report.append(f"Registered User/Mob : {username}")
@@ -584,7 +584,7 @@ def generate_text_summary(username, investor_id, kyc_status, df_sub, df_tx):
   )
   report.append("--------------------------------------------------\n")
 
-  report.append("ACTIVE PORTFOLIO PLANS & MATURITY SCHEDULE:")
+  report.append("ACTIVE PORTFOLIO PLANS & E-MANDATE SCHEDULE:")
   report.append("--------------------------------------------------")
   if not df_sub.empty:
     for _, row in df_sub.iterrows():
@@ -593,7 +593,7 @@ def generate_text_summary(username, investor_id, kyc_status, df_sub, df_tx):
       w_dt = comp_dt + pd.Timedelta(days=30)
       report.append(f"• Plan Name       : {row['plan_name']}")
       report.append(f"  Frequency       : {row['frequency']}")
-      report.append(f"  Target Amount   : Rs {row['target_amount']:,.0f}")
+      report.append(f"  Target Principal: Rs {row['target_amount']:,.0f}")
       report.append(f"  Installment     : Rs {row['installment_amt']:,.2f}")
       report.append(f"  Maturity Date   : {comp_dt.strftime('%d-%m-%Y')}")
       report.append(f"  Withdrawal Date : {w_dt.strftime('%d-%m-%Y')}")
@@ -602,7 +602,7 @@ def generate_text_summary(username, investor_id, kyc_status, df_sub, df_tx):
     report.append("No active portfolio subscriptions found.\n")
 
   report.append("--------------------------------------------------")
-  report.append("TRANSACTION & E-MANDATE AUDIT HISTORY:")
+  report.append("TRANSACTION LEDGER & E-MANDATE HIT HISTORY:")
   report.append("--------------------------------------------------")
   if not df_tx.empty:
     for _, row in df_tx.iterrows():
@@ -618,7 +618,7 @@ def generate_text_summary(username, investor_id, kyc_status, df_sub, df_tx):
     report.append("No transaction records found.")
 
   report.append("\n==================================================")
-  report.append("        End of Certified Account Summary Report")
+  report.append("        End of Certified Statement of Account")
   report.append("==================================================")
   return "\n".join(report)
 
@@ -632,8 +632,6 @@ if "current_user" not in st.session_state:
   st.session_state.current_user = ""
 if "forgot_user" not in st.session_state:
   st.session_state.forgot_user = ""
-if "selected_plans" not in st.session_state:
-  st.session_state.selected_plans = []
 
 # --- AUTHENTICATION SCREEN (SPLIT LAYOUT: LEFT HERO, RIGHT AUTH) ---
 if not st.session_state.logged_in:
@@ -825,26 +823,48 @@ else:
   balance_target = max(total_target_value - portfolio_value, 0)
 
 
-  def calculate_payout(target, freq):
+  def calculate_detailed_metrics(target, freq):
     if "Daily" in freq:
       roi = 0.08
+      installments_count = 90
+      inst_amt = target / 90
     elif "Weekly" in freq:
       roi = 0.10
+      installments_count = 13
+      inst_amt = (target / 90) * 7
     else:
       roi = 0.18
+      installments_count = 3
+      inst_amt = target / 3
 
     success_tx_count = (
         len(df_tx[df_tx["status"] == "Success"]) if not df_tx.empty else 0
     )
     streak_bonus = 0.01 if success_tx_count >= 3 else 0.0
-
     effective_roi = roi + streak_bonus
+
     maturity = target + (target * effective_roi)
     fee = maturity * 0.02
     gst = fee * 0.18
     net_payout = maturity - fee - gst
     net_profit = net_payout - target
-    return maturity, fee, gst, net_payout, net_profit, streak_bonus
+
+    start_dt = datetime.datetime.now()
+    comp_dt = start_dt + datetime.timedelta(days=90)
+    w_dt = comp_dt + datetime.timedelta(days=30)
+
+    return (
+        inst_amt,
+        installments_count,
+        effective_roi,
+        maturity,
+        fee,
+        gst,
+        net_payout,
+        net_profit,
+        comp_dt,
+        w_dt,
+    )
 
 
   # SIDEBAR
@@ -873,7 +893,6 @@ else:
   if st.sidebar.button("🚪 Logout", type="primary", use_container_width=True):
     st.session_state.logged_in = False
     st.session_state.current_user = ""
-    st.session_state.selected_plans = []
     st.rerun()
 
   # HEADER METRICS
@@ -899,9 +918,8 @@ else:
     st.subheader("⚡ AI Master Autopilot Agent (Fully Automated)")
     st.markdown(
         "<p style='color: #cbd5e1;'>This intelligent agent continuously"
-        " monitors all your active multi-plan portfolios, auto-heals failed"
-        " E-Mandates across plans, and manages your compounding wealth"
-        " lifecycle autonomously.</p>",
+        " monitors all active multi-plan portfolios, auto-heals failed"
+        " E-Mandates, and manages compounding wealth.</p>",
         unsafe_allow_html=True,
     )
 
@@ -910,7 +928,7 @@ else:
         <div class="autopilot-box">
             <h4 style="color: #38bdf8; margin-top:0;">🤖 Autonomous Multi-Plan Operations Center</h4>
             <p style="margin-bottom: 5px;">Status: <b style="color: #34d399;">🟢 ACTIVE & MONITORING</b></p>
-            <p style="font-size: 13px; color: #cbd5e1; margin-bottom:0;">The AI Agent executes routine multi-plan compliance, transaction healing, and yield boost checks in real time.</p>
+            <p style="font-size: 13px; color: #cbd5e1; margin-bottom:0;">The AI Agent executes routine compliance, transaction healing, and yield boost checks in real time.</p>
         </div>
         """,
         unsafe_allow_html=True,
@@ -933,14 +951,13 @@ else:
   elif menu == "📦 Product offerings":
     st.markdown("## Auto-Invest in Promising Startups.")
     st.markdown(
-        "<p style='color: #cbd5e1; font-size: 16px; margin-bottom: 5px;'>Select"
-        " new structured allocation plans below and authorize E-Mandates."
-        " (Note: Already running/active plans cannot be re-subscribed until"
-        " completed).</p>",
+        "<p style='color: #cbd5e1; font-size: 16px; margin-bottom: 10px;'>Select"
+        " an available plan below. Review its detailed EMI calculation, ROI,"
+        " and maturity projection before authorizing your E-Mandate. (Note: Active"
+        " plans cannot be re-subscribed).</p>",
         unsafe_allow_html=True,
     )
 
-    # Get list of already subscribed plan names for this user
     active_plan_names = (
         df_sub["plan_name"].tolist() if not df_sub.empty else []
     )
@@ -975,91 +992,83 @@ else:
         ),
     ]
 
-    selected_checkout_plans = []
-    c_cols = st.columns(4)
+    for title, target_amt, desc, key_id in plans_def:
+      is_already_active = title in active_plan_names
+      status_badge = (
+          "✅ Active & Running (Locked)"
+          if is_already_active
+          else "🟢 Available for Subscription"
+      )
 
-    for i, (title, target_amt, desc, key_id) in enumerate(plans_def):
-      with c_cols[i]:
-        is_already_active = title in active_plan_names
-        status_badge = (
-            "<span style='color: #34d399; font-weight: bold;'>✅ Active &"
-            " Running</span>"
-            if is_already_active
-            else "<span style='color: #38bdf8;'>🟢 Available</span>"
-        )
-
-        st.markdown(
-            f"""
-                <div class="plan-card">
-                    <div class="plan-title">{title}</div>
-                    <div class="plan-desc">{desc}</div>
-                    <div style="font-size: 12px; margin-bottom: 5px;">Status: {status_badge}</div>
-                    <div class="plan-target">🎯 Target: ₹ {target_amt:,.0f}</div>
-                </div>
-                """,
-            unsafe_allow_html=True,
-        )
-
-        if not is_already_active:
-          is_sel = st.checkbox(f"Select {title}", key=f"chk_{key_id}")
-          if is_sel:
-            selected_checkout_plans.append(
-                {"title": title, "target": target_amt}
-            )
+      with st.expander(f"📌 {title} | Target: ₹ {target_amt:,.0f} [{status_badge}]"):
+        if is_already_active:
+          st.info(
+              f"You already have an active running E-Mandate for **{title}**."
+              " You can subscribe to other available tiers."
+          )
         else:
+          st.write(desc)
+          sel_freq = st.selectbox(
+              f"Choose E-Mandate Frequency for {title}",
+              ["Daily SIP", "Weekly SIP", "Monthly SIP"],
+              key=f"freq_{key_id}",
+          )
+
+          (
+              inst_amt,
+              inst_count,
+              eff_roi,
+              maturity,
+              fee,
+              gst,
+              net_payout,
+              net_profit,
+              comp_dt,
+              w_dt,
+          ) = calculate_detailed_metrics(target_amt, sel_freq)
+
           st.markdown(
-              "<p style='color: #94a3b8; font-size: 12px; font-style:"
-              " italic;'>E-Mandate already locked for this active plan.</p>",
+              f"""
+                    <div class="calc-card">
+                        <h4 style="color: #34d399; margin-top:0;">📊 Detailed Financial & E-Mandate Breakdown for {title}</h4>
+                        <ul style="color: #f8fafc; font-size: 14px; line-height: 1.6; padding-left: 20px;">
+                            <li><b>Frequency & Installments:</b> {sel_freq} ({inst_count} Total Deductions)</li>
+                            <li><b>Installment Amount:</b> <span style="color: #38bdf8;">₹ {inst_amt:,.2f} per hit</span></li>
+                            <li><b>Target Yield (ROI):</b> {eff_roi*100:.1f}% p.a. equivalent</li>
+                            <li><b>Gross Maturity Value:</b> ₹ {maturity:,.2f}</li>
+                            <li><b>Platform Fee (2%) + GST (18%):</b> -₹ {fee+gst:,.2f}</li>
+                            <li><b>Estimated Net Payout:</b> <span style="color: #34d399; font-weight: bold;">₹ {net_payout:,.2f}</span></li>
+                            <li><b>Estimated Net Profit:</b> <span style="color: #38bdf8; font-weight: bold;">+₹ {net_profit:,.2f}</span></li>
+                            <li><b>Target Completion / Maturity Date:</b> {comp_dt.strftime('%d %B %Y')}</li>
+                            <li><b>Withdrawal Unlock Date:</b> {w_dt.strftime('%d %B %Y')} (After 30-day hold)</li>
+                        </ul>
+                    </div>
+                    """,
               unsafe_allow_html=True,
           )
 
-    st.markdown("---")
-    if selected_checkout_plans:
-      st.subheader(
-          "⚡ E-Mandate Authorization for Newly Selected Plans"
-          f" ({len(selected_checkout_plans)} Plans)"
-      )
-      bulk_freq = st.selectbox(
-          "Select Unified E-Mandate Frequency for Selected Plans",
-          ["Daily SIP", "Weekly SIP", "Monthly SIP"],
-      )
-
-      if st.button(
-          "🚀 Authorize E-Mandates for Newly Selected Plans", type="primary"
-      ):
-        try:
-          for p in selected_checkout_plans:
-            t_amt = p["target"]
-            if "Daily" in bulk_freq:
-              inst = t_amt / 90
-            elif "Weekly" in bulk_freq:
-              inst = (t_amt / 90) * 7
-            else:
-              inst = t_amt / 3
-
-            add_subscription(
-                username, p["title"], t_amt, bulk_freq, float(inst)
-            )
-
-          st.success(
-              f"✅ E-Mandate successfully authorized for {len(selected_checkout_plans)}"
-              " new plan(s)! Check 'My Portfolio'."
-          )
-          time.sleep(2)
-          st.rerun()
-        except Exception as e:
-          st.error(f"Error authorizing E-Mandate: {e}")
-    else:
-      st.info(
-          "👆 Check the box on any available plan(s) above to configure and"
-          " authorize new E-Mandates."
-      )
+          if st.button(
+              f"🚀 Authorize E-Mandate & Start {title}",
+              key=f"auth_btn_{key_id}",
+              type="primary",
+          ):
+            try:
+              add_subscription(
+                  username, title, target_amt, sel_freq, float(inst_amt)
+              )
+              st.success(
+                  f"✅ E-Mandate successfully authorized for **{title}** via"
+                  f" {sel_freq}!"
+              )
+              time.sleep(2)
+              st.rerun()
+            except Exception as e:
+              st.error(f"Error authorizing E-Mandate: {e}")
 
   elif menu == "📊 My Portfolio":
     st.subheader("Active Multi-Plan Portfolios & Account Summary")
 
     if not df_sub.empty:
-      # --- CALLING GAMIFICATION PLUGIN WIDGET ---
       GamificationPlugin.render_widget(df_tx)
 
       failed_txs = df_tx[df_tx["status"] == "Failed (Insufficient Balance)"]
@@ -1097,12 +1106,11 @@ else:
 
       st.markdown("---")
 
-      # --- DOWNLOAD ACCOUNT SUMMARY REPORT BUTTON ---
-      st.subheader("📄 Download Certified Account Summary Report")
+      st.subheader("📄 Download Certified Statement of Account")
       st.markdown(
-          "<p style='color: #cbd5e1;'>Download your complete official account"
-          " summary report containing plan-wise EMI breakdowns, target"
-          " balances, maturity dates, and withdrawal schedules.</p>",
+          "<p style='color: #cbd5e1;'>Download your complete official statement"
+          " of account containing plan-wise EMI breakdowns, target balances,"
+          " maturity dates, and withdrawal schedules.</p>",
           unsafe_allow_html=True,
       )
 
@@ -1110,9 +1118,9 @@ else:
           username, investor_id, kyc_status, df_sub, df_tx
       )
       st.download_button(
-          label="📥 Download Account Summary Report (TXT)",
+          label="📥 Download Certified Statement of Account (TXT)",
           data=report_text,
-          file_name=f"GullakCoin_Account_Summary_{investor_id}.txt",
+          file_name=f"GullakCoin_Statement_of_Account_{investor_id}.txt",
           mime="text/plain",
           type="primary",
       )
@@ -1127,7 +1135,12 @@ else:
     FamilyWealthTreePlugin.render_tree_dashboard(username)
 
   elif menu == "📝 Transaction History":
-    st.subheader("Automated E-Mandate Audit Logs (Plan-Wise Summary)")
+    st.subheader("Certified Statement of Account & E-Mandate Ledger")
+    st.markdown(
+        "<p style='color: #cbd5e1;'>Here is the complete itemized ledger showing"
+        " every E-Mandate hit and transaction mapped to your active plans.</p>",
+        unsafe_allow_html=True,
+    )
 
     if not df_sub.empty:
       with st.expander("🛠️ Developer Sandbox: Simulate E-Mandate Failure"):
@@ -1217,8 +1230,8 @@ else:
               return (
                   "🔄 **What is an E-Mandate? (Protocol Agent)**: An E-Mandate"
                   " (AutoPay / E-NACH) is an automated authorization given to"
-                  " your bank to deduct your chosen SIP amount across all your"
-                  " active plans on schedule."
+                  " your bank to deduct your chosen SIP amount across your"
+                  " running plans on schedule."
               )
             elif any(k in query for k in ["product", "offering", "tiers"]):
               return (
@@ -1227,27 +1240,11 @@ else:
                   " is running, you cannot re-subscribe until completion, but"
                   " you can invest in other available tiers!"
               )
-            elif any(k in query for k in ["120", "lock", "hold"]):
+            elif any(k in query for k in ["statement", "summary", "download"]):
               return (
-                  "⏳ **120 Days Lock-in Rule (Milestone Agent)**: Our model"
-                  " consists of **90 days of SIP accumulation** followed by a"
-                  " **30 days holding lock-in** to maximize startup growth"
-                  " returns."
-              )
-            elif any(
-                k in query for k in ["withdraw", "payout", "redeem", "redemption"]
-            ):
-              return (
-                  "💸 **Withdrawal Process (Liquidity Agent)**: Once your"
-                  " target is 100% achieved, KYC is verified, and the 30-day"
-                  " lock-in passes, click **'Initiate Withdrawal Request'**"
-                  " under **'My Portfolio'**."
-              )
-            elif any(k in query for k in ["report", "summary", "download"]):
-              return (
-                  "📄 **Account Summary Report (Export Agent)**: Go to the"
-                  " **'My Portfolio'** tab to download your certified account"
-                  " summary report with complete plan breakdowns."
+                  "📄 **Statement of Account (Export Agent)**: Go to the"
+                  " **'My Portfolio'** tab to download your certified"
+                  " Statement of Account."
               )
             else:
               return (
@@ -1400,7 +1397,7 @@ else:
     st.subheader("❓ Frequently Asked Questions & Portfolio Guide")
     st.markdown(
         "<p style='color: #cbd5e1;'>Complete guidance on GullakCoin Pro's"
-        " automated multi-plan wealth model and report exports.</p>",
+        " automated wealth model and Statement of Account exports.</p>",
         unsafe_allow_html=True,
     )
 
@@ -1408,25 +1405,25 @@ else:
         "Q1: Can I re-subscribe to a plan that is already active and running?"
     ):
       st.write(
-          "A: No! Once you select a plan and authorize its E-Mandate, it"
-          " becomes active and running. You cannot re-select or authorize"
-          " another E-Mandate for that exact same plan until its full"
-          " accumulation and maturity cycle is completed. However, you are"
-          " free to select and invest in other available tiers."
+          "A: No! Once you authorize an E-Mandate for a plan, it becomes active"
+          " and running. You cannot re-subscribe to that exact plan until its"
+          " full cycle is completed. However, you can select and invest in"
+          " other available tiers."
       )
 
     with st.expander(
-        "Q2: How does Transaction History track plan-wise E-Mandates?"
+        "Q2: How does the live calculation matrix work before E-Mandate?"
     ):
       st.write(
-          "A: Every deduction or transaction in your audit log is tagged with"
-          " its respective plan name (`plan_ref`), making it easy to track"
-          " which plan's E-Mandate hit."
+          "A: When you expand any plan under **'Product offerings'**, you can"
+          " choose your frequency (Daily, Weekly, Monthly) to instantly view"
+          " exact installment amounts, ROI, processing fees, GST, net profit,"
+          " and maturity dates before authorizing."
       )
 
-    with st.expander("Q3: How do I download my Account Summary Report?"):
+    with st.expander("Q3: How do I access my Statement of Account?"):
       st.write(
-          "A: Go to the **'My Portfolio'** tab. Scroll down to the export"
-          " section and click **'📥 Download Account Summary Report (TXT)'**"
-          " to instantly save your complete multi-plan statement."
+          "A: Go to the **'My Portfolio'** tab to download your certified"
+          " Statement of Account report, which includes all active plans and"
+          " E-Mandate hit histories."
       )
