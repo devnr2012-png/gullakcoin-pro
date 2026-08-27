@@ -17,12 +17,6 @@ CASHFREE_ENV = "TEST"
 TELEGRAM_BOT_TOKEN = "YOUR_TELEGRAM_BOT_TOKEN"
 TELEGRAM_CHAT_ID = "YOUR_TELEGRAM_CHAT_ID"
 
-# --- TWILIO SMS API CONFIGURATION ---
-TWILIO_ACCOUNT_SID = "AC6ee8959f0b00dd9d5b8648baeddda119"
-TWILIO_API_KEY_SID = "SK051e4ca445f1469c93174d5f794a0089"
-TWILIO_API_SECRET = "LTMfWNFvjS60bethokwAvmAdleQvgS0I"
-TWILIO_PHONE_NUMBER = "+17372212163"  # Updated Twilio Trial Number
-
 # --- OWNER CONTACT CONFIGURATION ---
 MY_WHATSAPP_NUMBER = "919140046797"
 MY_TELEGRAM_USERNAME = "9140046797"
@@ -253,27 +247,6 @@ def init_db():
   conn.close()
 
 
-def send_twilio_sms(to_number, message_body):
-  if not TWILIO_PHONE_NUMBER:
-    return False
-  url = f"https://api.twilio.com/2010-04-01/Accounts/{TWILIO_ACCOUNT_SID}/Messages.json"
-  payload = {
-      "To": to_number,
-      "From": TWILIO_PHONE_NUMBER,
-      "Body": message_body,
-  }
-  try:
-    response = requests.post(
-        url,
-        data=payload,
-        auth=(TWILIO_API_KEY_SID, TWILIO_API_SECRET),
-        timeout=5,
-    )
-    return response.status_code == 201
-  except Exception:
-    return False
-
-
 def send_telegram_alert(message):
   if TELEGRAM_BOT_TOKEN == "YOUR_TELEGRAM_BOT_TOKEN":
     return
@@ -413,16 +386,8 @@ if "logged_in" not in st.session_state:
   st.session_state.logged_in = False
 if "current_user" not in st.session_state:
   st.session_state.current_user = ""
-if "otp_generated" not in st.session_state:
-  st.session_state.otp_generated = ""
-if "auth_stage" not in st.session_state:
-  st.session_state.auth_stage = "none"
-if "selected_plan" not in st.session_state:
-  st.session_state.selected_plan = None
 if "forgot_user" not in st.session_state:
   st.session_state.forgot_user = ""
-if "whatsapp_otp_sent" not in st.session_state:
-  st.session_state.whatsapp_otp_sent = False
 
 # --- AUTHENTICATION SCREEN ---
 if not st.session_state.logged_in:
@@ -485,17 +450,7 @@ if not st.session_state.logged_in:
     )
     st.write("")
 
-    col_btn1, col_btn2 = st.columns(2)
-    with col_btn1:
-      req_wa = st.button(
-          "Request WhatsApp OTP", use_container_width=True, type="primary"
-      )
-    with col_btn2:
-      req_sms = st.button(
-          "Request Text (SMS) OTP", use_container_width=True, type="secondary"
-      )
-
-    if req_wa or req_sms:
+    if st.button("Login to Dashboard", use_container_width=True, type="primary"):
       conn = sqlite3.connect("gullakcoin_advanced.db")
       c = conn.cursor()
       c.execute(
@@ -510,80 +465,14 @@ if not st.session_state.logged_in:
         st.success("🔓 Biometric Passkey Verified Successfully!")
         time.sleep(1)
         st.rerun()
-      elif user_exists or l_user:
-        otp = str(random.randint(100000, 999999))
-        st.session_state.otp_generated = otp
-        st.session_state.auth_stage = "login_otp"
-        st.session_state.whatsapp_otp_sent = req_wa
-
-        if req_sms and l_user and l_user.isdigit():
-          # Send Real SMS via Twilio API
-          sms_body = (
-              f"Your GullakCoin Pro verification code is: {otp}. Valid for 5"
-              " minutes."
-          )
-          target_mobile = (
-              f"+{l_user.strip()}"
-              if not l_user.startswith("+")
-              else l_user.strip()
-          )
-          sms_sent = send_twilio_sms(target_mobile, sms_body)
-          if sms_sent:
-            st.success("✅ Real SMS OTP sent successfully via Twilio!")
-          else:
-            st.warning(
-                "⚠️ Twilio SMS failed to dispatch. Please check trial number"
-                " permissions."
-            )
-        elif req_wa:
-          st.success("✅ WhatsApp OTP Generated Successfully!")
+      elif user_exists:
+        st.session_state.logged_in = True
+        st.session_state.current_user = l_user
+        st.success("✅ Login Successful! Redirecting...")
+        time.sleep(1)
+        st.rerun()
       else:
-        st.error("Please enter your registered mobile number or email.")
-
-    if st.session_state.auth_stage == "login_otp":
-      target_phone = (
-          l_user.strip()
-          if l_user
-          and l_user.isdigit()
-          and len(l_user) >= 10
-          else MY_WHATSAPP_NUMBER
-      )
-
-      if st.session_state.whatsapp_otp_sent:
-        wa_msg = (
-            "Hello, please send my GullakCoin Pro Login OTP. Verification Code:"
-            f" {st.session_state.otp_generated}"
-        )
-        wa_link = (
-            f"https://wa.me/{target_phone}?text={urllib.parse.quote(wa_msg)}"
-        )
-
-        st.markdown(
-            f"""
-                <div style="background-color: rgba(37, 211, 102, 0.15); border: 1px solid #25D366; padding: 15px; border-radius: 10px; text-align: center; margin-bottom: 15px;">
-                    <p style="color: #ffffff; font-weight: 700; margin-bottom: 8px;">📲 Click below to receive your OTP instantly on WhatsApp:</p>
-                    <a href="{wa_link}" target="_blank" style="background-color: #25D366; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block;">💬 Send OTP via WhatsApp</a>
-                </div>
-                """,
-            unsafe_allow_html=True,
-        )
-      else:
-        st.info("📩 Enter the 6-digit Text OTP received on your mobile number.")
-
-      l_otp_input = st.text_input(
-          "Enter 6-Digit Verification Code", key="l_otp"
-      )
-      if st.button(
-          "Verify & Access Dashboard", type="primary", use_container_width=True
-      ):
-        if l_otp_input == st.session_state.otp_generated:
-          st.session_state.logged_in = True
-          st.session_state.current_user = l_user
-          st.session_state.auth_stage = "none"
-          st.session_state.whatsapp_otp_sent = False
-          st.rerun()
-        else:
-          st.error("Invalid verification code.")
+        st.error("Invalid credentials or user does not exist.")
 
   with tab2:
     st.write("")
@@ -591,7 +480,7 @@ if not st.session_state.logged_in:
     s_pass = st.text_input("Create Secure Password", type="password", key="s_pass")
     st.write("")
 
-    if st.button("Request Registration OTP", use_container_width=True):
+    if st.button("Register Account", use_container_width=True):
       if s_user and s_pass:
         conn = sqlite3.connect("gullakcoin_advanced.db")
         c = conn.cursor()
@@ -599,25 +488,7 @@ if not st.session_state.logged_in:
         if c.fetchone():
           st.error("Account already exists.")
         else:
-          otp = str(random.randint(100000, 999999))
-          st.session_state.otp_generated = otp
-          st.session_state.auth_stage = "signup_otp"
-          st.success(f"🔐 Registration OTP: **{otp}** (Simulated)")
-        conn.close()
-      else:
-        st.warning("Please fill in all fields.")
-
-    if st.session_state.auth_stage == "signup_otp":
-      s_otp_input = st.text_input(
-          "Enter 6-Digit Verification Code", key="s_otp"
-      )
-      if st.button(
-          "Verify & Complete Registration", type="primary", use_container_width=True
-      ):
-        if s_otp_input == st.session_state.otp_generated:
           investor_id = f"GC-PRO-{random.randint(100000, 999900)}"
-          conn = sqlite3.connect("gullakcoin_advanced.db")
-          c = conn.cursor()
           c.execute(
               "INSERT INTO users (username, password, investor_id, kyc_status,"
               " pan, aadhar, bank_acc, ifsc, branch, bank_mobile) VALUES (?, ?,"
@@ -639,22 +510,24 @@ if not st.session_state.logged_in:
           conn.close()
           st.success(
               f"🎉 Account created successfully! Your Investor ID is"
-              f" {investor_id}. Please login."
+              f" {investor_id}. Please go to Secure Login."
           )
-          st.session_state.auth_stage = "none"
-          time.sleep(3)
-          st.rerun()
-        else:
-          st.error("Invalid verification code.")
+        conn.close()
+      else:
+        st.warning("Please fill in all fields.")
 
   with tab3:
     st.write("")
     f_user = st.text_input(
         "Enter Your Registered Email or Mobile Number", key="f_user"
     )
+    new_pass_1 = st.text_input("New Password", type="password", key="n_pass1")
+    new_pass_2 = st.text_input(
+        "Confirm New Password", type="password", key="n_pass2"
+    )
     st.write("")
 
-    if st.button("Send Password Reset OTP", use_container_width=True):
+    if st.button("Reset Password & Save", type="primary", use_container_width=True):
       if f_user:
         conn = sqlite3.connect("gullakcoin_advanced.db")
         c = conn.cursor()
@@ -663,40 +536,17 @@ if not st.session_state.logged_in:
         conn.close()
 
         if user_record:
-          otp = str(random.randint(100000, 999999))
-          st.session_state.otp_generated = otp
-          st.session_state.forgot_user = f_user
-          st.session_state.auth_stage = "forgot_otp"
-          st.success(f"🔐 Reset OTP: **{otp}** (Simulated)")
+          if new_pass_1 and new_pass_1 == new_pass_2:
+            update_password(f_user, new_pass_1)
+            st.success(
+                "🎉 Password updated successfully! Please go to Secure Login."
+            )
+          else:
+            st.error("Passwords do not match or empty.")
         else:
           st.error("Account not found with this mobile number/email.")
       else:
         st.warning("Please enter your registered number or email.")
-
-    if st.session_state.auth_stage == "forgot_otp":
-      f_otp_input = st.text_input("Enter 6-Digit Reset OTP", key="f_otp")
-      new_pass_1 = st.text_input("New Password", type="password", key="n_pass1")
-      new_pass_2 = st.text_input(
-          "Confirm New Password", type="password", key="n_pass2"
-      )
-
-      if st.button(
-          "Reset Password & Save", type="primary", use_container_width=True
-      ):
-        if f_otp_input == st.session_state.otp_generated:
-          if new_pass_1 and new_pass_1 == new_pass_2:
-            update_password(st.session_state.forgot_user, new_pass_1)
-            st.success(
-                "🎉 Password updated successfully! Please go to Secure Login."
-            )
-            st.session_state.auth_stage = "none"
-            st.session_state.forgot_user = ""
-            time.sleep(3)
-            st.rerun()
-          else:
-            st.error("Passwords do not match or empty.")
-        else:
-          st.error("Invalid verification code.")
 
   st.markdown("</div>", unsafe_allow_html=True)
 
