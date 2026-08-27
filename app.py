@@ -4,6 +4,7 @@ import sqlite3
 import time
 import urllib.parse
 import pandas as pd
+import requests
 import streamlit as st
 
 # --- PAGE SETUP ---
@@ -15,6 +16,12 @@ CASHFREE_SECRET_KEY = "YOUR_CASHFREE_SECRET_KEY"
 CASHFREE_ENV = "TEST"
 TELEGRAM_BOT_TOKEN = "YOUR_TELEGRAM_BOT_TOKEN"
 TELEGRAM_CHAT_ID = "YOUR_TELEGRAM_CHAT_ID"
+
+# --- TWILIO SMS API CONFIGURATION ---
+TWILIO_ACCOUNT_SID = "AC6ee8959f0b00dd9d5b8648baeddda119"
+TWILIO_API_KEY_SID = "SK051e4ca445f1469c93174d5f794a0089"
+TWILIO_API_SECRET = "LTMfWNFvjS60bethokwAvmAdleQvgS0I"
+TWILIO_PHONE_NUMBER = "YOUR_TWILIO_PHONE_NUMBER"  # Apna Twilio phone number yahan dalein
 
 # --- OWNER CONTACT CONFIGURATION ---
 MY_WHATSAPP_NUMBER = "919140046797"
@@ -246,14 +253,36 @@ def init_db():
   conn.close()
 
 
+def send_twilio_sms(to_number, message_body):
+  if (
+      TWILIO_PHONE_NUMBER == "YOUR_TWILIO_PHONE_NUMBER"
+      or not TWILIO_PHONE_NUMBER
+  ):
+    return False
+  url = f"https://api.twilio.com/2010-04-01/Accounts/{TWILIO_ACCOUNT_SID}/Messages.json"
+  payload = {
+      "To": to_number,
+      "From": TWILIO_PHONE_NUMBER,
+      "Body": message_body,
+  }
+  try:
+    response = requests.post(
+        url,
+        data=payload,
+        auth=(TWILIO_API_KEY_SID, TWILIO_API_SECRET),
+        timeout=5,
+    )
+    return response.status_code == 201
+  except Exception:
+    return False
+
+
 def send_telegram_alert(message):
   if TELEGRAM_BOT_TOKEN == "YOUR_TELEGRAM_BOT_TOKEN":
     return
   url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
   payload = {"chat_id": TELEGRAM_CHAT_ID, "text": message}
   try:
-    import requests
-
     requests.post(url, json=payload, timeout=3)
   except Exception:
     pass
@@ -489,12 +518,28 @@ if not st.session_state.logged_in:
         st.session_state.otp_generated = otp
         st.session_state.auth_stage = "login_otp"
         st.session_state.whatsapp_otp_sent = req_wa
-        if req_wa:
-          st.success("✅ WhatsApp OTP Generated Successfully!")
-        else:
-          st.success(
-              f"✅ Text (SMS) OTP Generated Successfully! Code: **{otp}**"
+
+        if req_sms and l_user and l_user.isdigit():
+          # Send Real SMS via Twilio API
+          sms_body = (
+              f"Your GullakCoin Pro verification code is: {otp}. Valid for 5"
+              " minutes."
           )
+          target_mobile = (
+              f"+{l_user.strip()}"
+              if not l_user.startswith("+")
+              else l_user.strip()
+          )
+          sms_sent = send_twilio_sms(target_mobile, sms_body)
+          if sms_sent:
+            st.success("✅ Real SMS OTP sent successfully via Twilio!")
+          else:
+            st.info(
+                f"ℹ️ SMS Gateway notice. Simulated Code: **{otp}** (Configure"
+                " Twilio Phone Number)"
+            )
+        elif req_wa:
+          st.success("✅ WhatsApp OTP Generated Successfully!")
       else:
         st.error("Please enter your registered mobile number or email.")
 
@@ -527,12 +572,12 @@ if not st.session_state.logged_in:
         )
       else:
         st.info(
-            f"📩 Text OTP sent to registered number. (Simulated Code:"
-            f" **{st.session_state.otp_generated}**)"
+            "📩 Enter the Text OTP received on your mobile number (Simulated"
+            f" code for testing: **{st.session_state.otp_generated}**)"
         )
 
       l_otp_input = st.text_input(
-          "Enter 6-Digit Verification Code (WhatsApp or Text)", key="l_otp"
+          "Enter 6-Digit Verification Code", key="l_otp"
       )
       if st.button(
           "Verify & Access Dashboard", type="primary", use_container_width=True
