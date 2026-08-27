@@ -17,6 +17,9 @@ CASHFREE_ENV = (
     "TEST"  # Use "TEST" for sandbox, change to "PROD" for live payments
 )
 
+# --- DEEPSEEK API CONFIGURATION ---
+DEEPSEEK_API_KEY = "YOUR_DEEPSEEK_API_KEY"
+
 
 # --- CUSTOM CSS ---
 st.markdown(
@@ -654,6 +657,7 @@ else:
           "📦 Product offerings",
           "📊 My Portfolio",
           "📝 Transaction History",
+          "🤖 AI Wealth Advisor",
           "👤 Profile & KYC",
           "💬 Support & Help",
           "❓ FAQs",
@@ -838,7 +842,7 @@ else:
               use_container_width=True,
           ):
             try:
-              # Cashfree Direct REST API Integration (Bypasses library import errors)
+              # Cashfree Direct REST API Integration
               url = (
                   "https://sandbox.cashfree.com/pg/orders"
                   if CASHFREE_ENV == "TEST"
@@ -867,7 +871,6 @@ else:
                   "x-client-secret": CASHFREE_SECRET_KEY,
               }
 
-              # Fallback simulated order id if credentials are not yet updated
               if CASHFREE_APP_ID == "YOUR_CASHFREE_APP_ID":
                 cashfree_order_id = f"order_{random.randint(100000, 999999)}"
               else:
@@ -1080,6 +1083,70 @@ Estimated Net Gain    : ₹ {net_profit:,.2f}
     else:
       st.info("No ledger entries found.")
 
+  elif menu == "🤖 AI Wealth Advisor":
+    st.subheader("🤖 DeepSeek AI Wealth Advisor")
+    st.write(
+        "Ask anything about your investment strategy, startup allocation, or"
+        " portfolio targets!"
+    )
+
+    if "ai_messages" not in st.session_state:
+      st.session_state.ai_messages = []
+
+    for message in st.session_state.ai_messages:
+      with st.chat_message(message["role"]):
+        st.markdown(message["content"])
+
+    if user_prompt := st.chat_input(
+        "Type your financial query here (e.g., How to optimize my SIP?)"
+    ):
+      st.session_state.ai_messages.append(
+          {"role": "user", "content": user_prompt}
+      )
+      with st.chat_message("user"):
+        st.markdown(user_prompt)
+
+      with st.chat_message("assistant"):
+        with st.spinner("DeepSeek AI is analyzing..."):
+          try:
+            if DEEPSEEK_API_KEY == "YOUR_DEEPSEEK_API_KEY":
+              ai_response = (
+                  "*(Simulated Response)*: To maximize your GullakCoin Pro"
+                  " returns, maintain a consistent SIP streak to unlock the"
+                  " +1% AI Streak Bonus and target structured 120-day startup"
+                  " growth models!"
+              )
+            else:
+              url = "https://api.deepseek.com/chat/completions"
+              headers = {
+                  "Authorization": f"Bearer {DEEPSEEK_API_KEY}",
+                  "Content-Type": "application/json",
+              }
+              payload = {
+                  "model": "deepseek-chat",
+                  "messages": [
+                      {
+                          "role": "system",
+                          "content": (
+                              "You are an expert financial wealth advisor for"
+                              " GullakCoin Pro platform."
+                          ),
+                      },
+                      {"role": "user", "content": user_prompt},
+                  ],
+              }
+              resp = requests.post(
+                  url, json=payload, headers=headers, timeout=15
+              )
+              ai_response = resp.json()["choices"][0]["message"]["content"]
+          except Exception as e:
+            ai_response = f"AI Connection Error: {e}"
+
+          st.markdown(ai_response)
+          st.session_state.ai_messages.append(
+              {"role": "assistant", "content": ai_response}
+          )
+
   elif menu == "👤 Profile & KYC":
     st.subheader("User Profile & KYC Verification")
     st.markdown(
@@ -1202,7 +1269,7 @@ Estimated Net Gain    : ₹ {net_profit:,.2f}
                 <h3>📧 Email Support</h3>
                 <p style="color: #cbd5e1; font-size: 13px;">Write to us at support@gullakcoin.pro</p>
                 <a href="mailto:support@gullakcoin.pro"><button style="background-color: #34d399; color: black; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer;">Send Email</button></a>
-            </div>
+                </div>
             """,
           unsafe_allow_html=True,
       )
