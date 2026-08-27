@@ -147,11 +147,15 @@ st.markdown(
     .auth-container {
         background: rgba(11, 41, 32, 0.92);
         backdrop-filter: blur(16px);
-        padding: 40px; border-radius: 20px; border: 1px solid #10b981;
-        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.7); max-width: 520px; margin: 0 auto;
+        padding: 30px 40px; 
+        border-radius: 20px; 
+        border: 1px solid #10b981;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.7); 
+        max-width: 520px; 
+        margin: 20px auto 0 auto;
     }
     
-    .logo-container { text-align: center; margin-bottom: 20px; }
+    .logo-container { text-align: center; margin-bottom: 15px; }
     .logo-badge {
         display: inline-block; 
         background: linear-gradient(135deg, #34d399, #059669); 
@@ -162,7 +166,6 @@ st.markdown(
         border-radius: 16px;
         box-shadow: 0 10px 25px rgba(52, 211, 153, 0.4); 
         letter-spacing: 1.5px;
-        position: relative;
     }
     .brand-title { font-size: 30px; font-weight: 900; color: #ffffff; margin-top: 15px; }
     .brand-tagline { font-size: 13px; color: #34d399; margin-top: 6px; font-style: italic; font-weight: 700; }
@@ -481,8 +484,6 @@ if "selected_plan" not in st.session_state:
 
 # --- AUTHENTICATION SCREEN ---
 if not st.session_state.logged_in:
-  st.write("")
-
   st.markdown("<div class='auth-container'>", unsafe_allow_html=True)
   st.markdown(
       """
