@@ -21,7 +21,7 @@ TELEGRAM_CHAT_ID = "YOUR_TELEGRAM_CHAT_ID"
 TWILIO_ACCOUNT_SID = "AC6ee8959f0b00dd9d5b8648baeddda119"
 TWILIO_API_KEY_SID = "SK051e4ca445f1469c93174d5f794a0089"
 TWILIO_API_SECRET = "LTMfWNFvjS60bethokwAvmAdleQvgS0I"
-TWILIO_PHONE_NUMBER = "YOUR_TWILIO_PHONE_NUMBER"  # Apna Twilio phone number yahan dalein
+TWILIO_PHONE_NUMBER = "+17372212163"  # Updated Twilio Trial Number
 
 # --- OWNER CONTACT CONFIGURATION ---
 MY_WHATSAPP_NUMBER = "919140046797"
@@ -254,10 +254,7 @@ def init_db():
 
 
 def send_twilio_sms(to_number, message_body):
-  if (
-      TWILIO_PHONE_NUMBER == "YOUR_TWILIO_PHONE_NUMBER"
-      or not TWILIO_PHONE_NUMBER
-  ):
+  if not TWILIO_PHONE_NUMBER:
     return False
   url = f"https://api.twilio.com/2010-04-01/Accounts/{TWILIO_ACCOUNT_SID}/Messages.json"
   payload = {
@@ -534,9 +531,9 @@ if not st.session_state.logged_in:
           if sms_sent:
             st.success("✅ Real SMS OTP sent successfully via Twilio!")
           else:
-            st.info(
-                f"ℹ️ SMS Gateway notice. Simulated Code: **{otp}** (Configure"
-                " Twilio Phone Number)"
+            st.warning(
+                "⚠️ Twilio SMS failed to dispatch. Please check trial number"
+                " permissions."
             )
         elif req_wa:
           st.success("✅ WhatsApp OTP Generated Successfully!")
@@ -571,10 +568,7 @@ if not st.session_state.logged_in:
             unsafe_allow_html=True,
         )
       else:
-        st.info(
-            "📩 Enter the Text OTP received on your mobile number (Simulated"
-            f" code for testing: **{st.session_state.otp_generated}**)"
-        )
+        st.info("📩 Enter the 6-digit Text OTP received on your mobile number.")
 
       l_otp_input = st.text_input(
           "Enter 6-Digit Verification Code", key="l_otp"
