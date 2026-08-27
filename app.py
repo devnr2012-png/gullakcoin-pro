@@ -1124,16 +1124,48 @@ Estimated Net Gain    : ₹ {net_profit:,.2f}
         with st.spinner("Smart AI Advisor is analyzing..."):
           query_lower = user_prompt.lower()
 
-          # Robust Smart Contextual Response Engine (Never fails, gives exact tailored answers)
-          if "plan" in query_lower or "select" in query_lower:
+          # Advanced Contextual Answer Matcher for GullakCoin Pro
+          if "product" in query_lower or "offering" in query_lower:
             ai_response = (
-                "📦 **Plan Selection Guide**: To choose your investment plan,"
-                " navigate to the **'Product offerings'** tab from the sidebar."
-                " You can select from options like **GullakCoin Seed** (₹"
-                " 5,000 target) or **GullakCoin Growth** (₹ 25,000 target). Once"
-                " selected, configure your preferred SIP frequency (Daily,"
-                " Weekly, or Monthly) and authorize AutoPay to start your"
-                " journey!"
+                "📦 **Product Offerings**: GullakCoin Pro offers 4 structured"
+                " startup allocation tiers:\n1. **GullakCoin Seed** (Target ₹"
+                " 5,000)\n2. **GullakCoin Growth** (Target ₹"
+                " 25,000)\n3. **GullakCoin Plus** (Target ₹"
+                " 50,000)\n4. **GullakCoin Superplus** (Target ₹"
+                " 100,000)\n\nEach plan runs for a 3-month SIP tenure + 1-month"
+                " hold period."
+            )
+          elif (
+              "120" in query_lower
+              or "days" in query_lower
+              or "lock" in query_lower
+          ):
+            ai_response = (
+                "⏳ **120 Days & Lock-in Period**: Our structured milestone"
+                " model consists of **3 Months (90 Days) of SIP deductions** +"
+                " **1 Month (30 Days) of Lock-in/Hold period**. Funds and"
+                " withdrawals remain strictly locked until the full 120-day cycle"
+                " and target principal are 100% completed."
+            )
+          elif (
+              "withdraw" in query_lower
+              or "payout" in query_lower
+              or "redemption" in query_lower
+          ):
+            ai_response = (
+                "💸 **Withdrawal & Redemption**: You can initiate a"
+                " withdrawal from the **'My Portfolio'** tab once your target"
+                " is 100% achieved, your bank account KYC is verified, and the"
+                " 30-day lock-in period has passed. Net payout is credited"
+                " directly to your verified bank account after a 2% platform"
+                " fee + 18% GST."
+            )
+          elif "plan" in query_lower or "choose" in query_lower:
+            ai_response = (
+                "📦 **Plan Selection Guide**: Go to the **'Product offerings'**"
+                " tab, select a tier (Seed, Growth, Plus, or Superplus), choose"
+                " your SIP frequency (Daily, Weekly, or Monthly), and authorize"
+                " your AutoPay E-Mandate to start."
             )
           elif (
               "emi" in query_lower
@@ -1141,51 +1173,29 @@ Estimated Net Gain    : ₹ {net_profit:,.2f}
               or "installment" in query_lower
           ):
             ai_response = (
-                f"💳 **E-Mandate & EMI Status for {username}**: Your active SIP"
-                " installments are automatically managed through Cashfree"
-                " AutoPay. You can review all successfully processed and"
-                " pending deductions in the **'Transaction History'** and"
-                " **'My Portfolio'** tabs."
+                f"💳 **EMI & Installment Status for {username}**: Your active SIP"
+                " deductions are automated through Cashfree AutoPay. Check all"
+                " your payment logs under **'Transaction History'**."
             )
-          elif "field" in query_lower or "detector" in query_lower:
+          elif "portfolio" in query_lower or "value" in query_lower:
             ai_response = (
-                "🤖 **AI Yield Predictor & Streak Tracker**: This intelligent"
-                " system monitors your AutoPay consistency. Maintaining 3 or"
-                " more successful consecutive installments unlocks your Gold"
-                " Streak status and a **+1% AI Yield Bonus** on your maturity"
-                " payout!"
-            )
-          elif (
-              "portfolio" in query_lower
-              or "value" in query_lower
-              or "check" in query_lower
-          ):
-            ai_response = (
-                f"📊 **Portfolio Overview**: Your active portfolio value is"
-                f" currently **₹ {portfolio_value:,.2f}** out of your target"
-                f" principal **₹ {target_value:,.0f}**. Keep your SIP active"
-                " to reach your financial milestone!"
+                f"📊 **Portfolio Overview**: Your current portfolio value is"
+                f" **₹ {portfolio_value:,.2f}** out of your target principal"
+                f" **₹ {target_value:,.0f}**."
             )
           elif "kyc" in query_lower or "bank" in query_lower:
             ai_response = (
-                f"🛡️ **KYC & Verification**: Your account KYC status is"
-                f" **{kyc_status}**. Please ensure your bank account mobile"
-                f" number matches your login ID (`{username}`) for instant"
-                " automatic approval."
-            )
-          elif "transaction" in query_lower or "history" in query_lower:
-            ai_response = (
-                "📝 **Transaction History**: You can view all your successful"
-                " deposits, investments, and failed E-Mandate audit logs by"
-                " clicking on the **'Transaction History'** tab in the sidebar."
+                f"🛡️ **KYC & Verification**: Your KYC status is **{kyc_status}**."
+                " Make sure your bank registered mobile number matches your"
+                f" login ID (`{username}`) for instant approval."
             )
           else:
             ai_response = (
                 f"💡 **Wealth Advisor Insight**: Regarding your query about"
-                f" *'{user_prompt}'*, GullakCoin Pro's structured 120-day"
-                " milestone model (3 months SIP + 1 month hold) is designed to"
-                " yield significantly higher returns through diversified"
-                " startup allocations compared to standard bank FDs."
+                f" *'{user_prompt}'*, GullakCoin Pro's structured milestone"
+                " model targets significantly higher net growth through"
+                " diversified startup allocations compared to traditional bank"
+                " FDs."
             )
 
           st.markdown(ai_response)
