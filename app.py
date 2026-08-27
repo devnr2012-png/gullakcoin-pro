@@ -152,7 +152,7 @@ st.markdown(
         border: 1px solid #10b981;
         box-shadow: 0 25px 50px rgba(0, 0, 0, 0.7); 
         max-width: 520px; 
-        margin: 0px auto 0 auto !important;
+        margin: -40px auto 0 auto !important;
     }
     
     .logo-container { text-align: center; margin-bottom: 15px; }
