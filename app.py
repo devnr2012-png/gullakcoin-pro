@@ -16,6 +16,11 @@ CASHFREE_ENV = "TEST"
 TELEGRAM_BOT_TOKEN = "YOUR_TELEGRAM_BOT_TOKEN"
 TELEGRAM_CHAT_ID = "YOUR_TELEGRAM_CHAT_ID"
 
+# --- OWNER CONTACT CONFIGURATION ---
+MY_WHATSAPP_NUMBER = "919140046797"
+MY_TELEGRAM_USERNAME = "9140046797"
+MY_EMAIL = "devnr2012@gmail.com"
+
 
 # --- CUSTOM CSS ---
 st.markdown(
@@ -243,7 +248,7 @@ def init_db():
 
 def send_telegram_alert(message):
   if TELEGRAM_BOT_TOKEN == "YOUR_TELEGRAM_BOT_TOKEN":
-    return  # Skip if not configured
+    return
   url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
   payload = {"chat_id": TELEGRAM_CHAT_ID, "text": message}
   try:
@@ -464,7 +469,6 @@ if not st.session_state.logged_in:
       conn.close()
 
       if use_biometric and l_user:
-        # Bypass password check if biometric passkey simulator is checked
         st.session_state.logged_in = True
         st.session_state.current_user = l_user
         st.success("🔓 Biometric Passkey Verified Successfully!")
@@ -483,14 +487,11 @@ if not st.session_state.logged_in:
         st.session_state.auth_stage == "login_otp"
         and st.session_state.whatsapp_otp_sent
     ):
-      wa_number = "919876543210"
       wa_msg = (
           "Hello, please send my GullakCoin Pro Login OTP. Verification Code:"
           f" {st.session_state.otp_generated}"
       )
-      wa_link = (
-          f"https://wa.me/{wa_number}?text={urllib.parse.quote(wa_msg)}"
-      )
+      wa_link = f"https://wa.me/{MY_WHATSAPP_NUMBER}?text={urllib.parse.quote(wa_msg)}"
 
       st.markdown(
           f"""
@@ -1118,7 +1119,6 @@ Estimated Net Gain    : ₹ {net_profit:,.2f}
         with st.spinner("Smart AI Advisor is analyzing..."):
           q = user_prompt.lower()
 
-          # DeepSeek Harness Inspired Multi-Agent Plugin & Dispatcher Architecture
           def dispatch_agent_plugin(query):
             if any(
                 k in query
@@ -1312,14 +1312,20 @@ Estimated Net Gain    : ₹ {net_profit:,.2f}
     )
     st.write("")
 
+    wa_msg = urllib.parse.quote(
+        "Hello GullakCoin Pro Support, I need assistance with my investment."
+    )
+    wa_url = f"https://wa.me/{MY_WHATSAPP_NUMBER}?text={wa_msg}"
+    telegram_url = f"https://t.me/{MY_TELEGRAM_USERNAME}"
+
     s_col1, s_col2, s_col3 = st.columns(3)
     with s_col1:
       st.markdown(
-          """
+          f"""
             <div class="support-card">
                 <h3>💬 WhatsApp Support</h3>
                 <p style="color: #cbd5e1; font-size: 13px;">Instant chat assistance with our executive.</p>
-                <a href="https://wa.me/919876543210" target="_blank"><button style="background-color: #25D366; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer;">Chat on WhatsApp</button></a>
+                <a href="{wa_url}" target="_blank"><button style="background-color: #25D366; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer;">Chat on WhatsApp</button></a>
             </div>
             """,
           unsafe_allow_html=True,
@@ -1327,11 +1333,11 @@ Estimated Net Gain    : ₹ {net_profit:,.2f}
 
     with s_col2:
       st.markdown(
-          """
+          f"""
             <div class="support-card">
                 <h3>🤖 Telegram Bot</h3>
                 <p style="color: #cbd5e1; font-size: 13px;">Get automated updates via our Telegram Bot.</p>
-                <a href="https://t.me/GullakCoinSupportBot" target="_blank"><button style="background-color: #0088cc; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer;">Join Telegram Bot</button></a>
+                <a href="{telegram_url}" target="_blank"><button style="background-color: #0088cc; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer;">Join Telegram Bot</button></a>
             </div>
             """,
           unsafe_allow_html=True,
@@ -1339,11 +1345,11 @@ Estimated Net Gain    : ₹ {net_profit:,.2f}
 
     with s_col3:
       st.markdown(
-          """
+          f"""
             <div class="support-card">
                 <h3>📧 Email Support</h3>
-                <p style="color: #cbd5e1; font-size: 13px;">Write to us at support@gullakcoin.pro</p>
-                <a href="mailto:support@gullakcoin.pro"><button style="background-color: #34d399; color: black; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer;">Send Email</button></a>
+                <p style="color: #cbd5e1; font-size: 13px;">Write to us at {MY_EMAIL}</p>
+                <a href="mailto:{MY_EMAIL}"><button style="background-color: #34d399; color: black; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer;">Send Email</button></a>
                 </div>
             """,
           unsafe_allow_html=True,
