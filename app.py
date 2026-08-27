@@ -3,6 +3,7 @@ import random
 import sqlite3
 import time
 import urllib.parse
+import fpdf
 import pandas as pd
 import requests
 import streamlit as st
@@ -277,13 +278,10 @@ class RiskAgentPlugin:
 
 
 class MasterAutopilotAgent:
-  """Master AI Agent jo user ke saare financial tasks ko automate karega"""
 
   @staticmethod
-  def run_autopilot_routine(username, active_plan, kyc_status):
+  def run_autopilot_routine(username, df_sub, kyc_status):
     actions_taken = []
-
-    # Task 1: Auto-Detect & Resolve Failed SIPs / Grace Period
     conn = sqlite3.connect("gullakcoin_advanced.db")
     df_tx = pd.read_sql_query(
         f"SELECT * FROM transactions WHERE username='{username}'", conn
@@ -294,32 +292,24 @@ class MasterAutopilotAgent:
       failed_count = len(
           df_tx[df_tx["status"] == "Failed (Insufficient Balance)"]
       )
-      if failed_count > 0 and active_plan is not None:
-        # Auto-heal / Clear failed installment automatically via Autopilot
+      if failed_count > 0 and not df_sub.empty:
+        plan_name = df_sub.iloc[0]["plan_name"]
+        inst_amt = df_sub.iloc[0]["installment_amt"]
         conn = sqlite3.connect("gullakcoin_advanced.db")
         c = conn.cursor()
         dt = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         c.execute(
             "INSERT INTO transactions (username, trans_type, category, amount,"
-            " status, date) VALUES (?, ?, ?, ?, ?, ?)",
-            (
-                username,
-                "Income",
-                "Investment",
-                active_plan["installment_amt"],
-                "Success",
-                dt,
-            ),
+            " status, plan_ref, date) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (username, "Income", "Investment", inst_amt, "Success", plan_name, dt),
         )
         conn.commit()
         conn.close()
         actions_taken.append(
-            "⚡ **Auto-Healed Failed SIP**: Automatically cleared ₹"
-            f" {active_plan['installment_amt']:,.2f} using backup liquidity"
-            " reserve."
+            f"⚡ **Auto-Healed Failed SIP ({plan_name})**: Automatically cleared"
+            f" ₹ {inst_amt:,.2f} using backup liquidity reserve."
         )
 
-    # Task 2: Auto-Compliance & KYC Verification Check
     if "Pending" in kyc_status:
       actions_taken.append(
           "🛡️ **Compliance Guard**: KYC status is pending. Ensure bank"
@@ -330,14 +320,13 @@ class MasterAutopilotAgent:
           "🛡️ **Compliance Guard**: KYC is 100% Verified & Approved."
       )
 
-    # Task 3: Smart Yield Booster Optimization
     success_count = (
         len(df_tx[df_tx["status"] == "Success"]) if not df_tx.empty else 0
     )
     if success_count >= 3:
       actions_taken.append(
           "🔥 **Yield Maximizer**: Gold Investor Streak active! +1.0% AI"
-          " Yield Boost automatically applied to maturity."
+          " Yield Boost automatically applied across all active plans."
       )
     else:
       actions_taken.append(
@@ -392,7 +381,7 @@ class FamilyWealthTreePlugin:
           """
             <div style="background-color: #0b2920; padding: 20px; border-radius: 12px; border: 1px solid #34d399;">
                 <p style='color: #34d399; font-weight: bold; margin-bottom: 5px;'>🌱 Primary Tree: Root Portfolio</p>
-                <p style='color: #ffffff; font-size: 14px;'>Status: <b>Growing & Nurturing (1 Active SIP Milestone)</b></p>
+                <p style='color: #ffffff; font-size: 14px;'>Status: <b>Growing & Nurturing (Active Multi-SIP Portfolios)</b></p>
                 <hr style='border-color: #047857;'>
                 <p style='color: #93c5fd; font-weight: bold; margin-bottom: 5px;'>🌿 Branching Seedlings:</p>
                 <ul style='color: #cbd5e1; font-size: 13px; padding-left: 20px;'>
@@ -427,8 +416,15 @@ def init_db():
 
   c.execute(
       """CREATE TABLE IF NOT EXISTS transactions (
-                 id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT, trans_type TEXT, category TEXT, amount REAL, status TEXT, date TEXT)"""
+                 id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT, trans_type TEXT, category TEXT, amount REAL, status TEXT, plan_ref TEXT, date TEXT)"""
   )
+  # Check if plan_ref exists in transactions
+  tx_cols = [
+      col[1] for col in c.execute("PRAGMA table_info(transactions)").fetchall()
+  ]
+  if "plan_ref" not in tx_cols:
+    c.execute("ALTER TABLE transactions ADD COLUMN plan_ref TEXT")
+
   c.execute(
       """CREATE TABLE IF NOT EXISTS subscriptions (
                  id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT, plan_name TEXT, target_amount INTEGER, frequency TEXT, installment_amt REAL, date TEXT)"""
@@ -506,9 +502,7 @@ def get_data(username):
       f"SELECT * FROM transactions WHERE username='{username}'", conn
   )
   df_sub = pd.read_sql_query(
-      f"SELECT * FROM subscriptions WHERE username='{username}' ORDER BY id"
-      " DESC LIMIT 1",
-      conn,
+      f"SELECT * FROM subscriptions WHERE username='{username}'", conn
   )
   conn.close()
   return df_tx, df_sub
@@ -534,8 +528,16 @@ def add_subscription(
   )
   c.execute(
       "INSERT INTO transactions (username, trans_type, category, amount,"
-      " status, date) VALUES (?, ?, ?, ?, ?, ?)",
-      (username, "Income", "Investment", installment_amt, "Success", dt),
+      " status, plan_ref, date) VALUES (?, ?, ?, ?, ?, ?, ?)",
+      (
+          username,
+          "Income",
+          "Investment",
+          installment_amt,
+          "Success",
+          plan_name,
+          dt,
+      ),
   )
   conn.commit()
   conn.close()
@@ -545,28 +547,151 @@ def add_subscription(
   )
 
 
-def log_failed_transaction(username, installment_amt):
+def log_failed_transaction(username, plan_name, installment_amt):
   conn = sqlite3.connect("gullakcoin_advanced.db")
   c = conn.cursor()
   dt = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
   c.execute(
       "INSERT INTO transactions (username, trans_type, category, amount,"
-      " status, date) VALUES (?, ?, ?, ?, ?, ?)",
+      " status, plan_ref, date) VALUES (?, ?, ?, ?, ?, ?, ?)",
       (
           username,
           "Expense",
           "Failed SIP",
           installment_amt,
           "Failed (Insufficient Balance)",
+          plan_name,
           dt,
       ),
   )
   conn.commit()
   conn.close()
   send_telegram_alert(
-      f"⚠️ AutoPay Failure Alert: {username} installment of ₹{installment_amt:,.2f}"
-      " failed due to insufficient balance!"
+      f"⚠️ AutoPay Failure Alert: {username} installment for {plan_name} of"
+      f" ₹{installment_amt:,.2f} failed due to insufficient balance!"
   )
+
+
+# --- PDF GENERATOR CLASS ---
+class PDFReport(fpdf.FPDF):
+
+  def header(self):
+    self.set_font("Arial", "B", 16)
+    self.set_text_color(5, 150, 105)
+    self.cell(0, 10, "GullakCoin Pro - Account & Portfolio Summary", 0, 1, "C")
+    self.set_font("Arial", "I", 10)
+    self.set_text_color(100, 100, 100)
+    self.cell(
+        0,
+        6,
+        "Official Certified Wealth Allocation & Maturity Report",
+        0,
+        1,
+        "C",
+    )
+    self.ln(5)
+
+  def footer(self):
+    self.set_y(-15)
+    self.set_font("Arial", "I", 8)
+    self.set_text_color(150, 150, 150)
+    self.cell(
+        0, 10, f"Page {self.page_no()} | GullakCoin Pro Secure Ledger", 0, 0, "C"
+    )
+
+
+def generate_pdf_summary(username, investor_id, kyc_status, df_sub, df_tx):
+  pdf = PDFReport()
+  pdf.add_page()
+  pdf.set_auto_page_break(auto=True, margin=15)
+
+  # User & Account Details Box
+  pdf.set_font("Arial", "B", 12)
+  pdf.set_text_color(20, 20, 20)
+  pdf.cell(0, 8, f"Investor Account ID: {investor_id}", 0, 1)
+  pdf.set_font("Arial", "", 10)
+  pdf.cell(
+      0,
+      6,
+      f"Registered User/Mobile: {username} | KYC Status: {kyc_status}",
+      0,
+      1,
+  )
+  pdf.cell(
+      0,
+      6,
+      f"Report Generated On: {datetime.datetime.now().strftime('%d %B %Y, %H:%M')}",
+      0,
+      1,
+  )
+  pdf.ln(5)
+
+  # Active Subscriptions / Portfolios Summary Table
+  pdf.set_font("Arial", "B", 12)
+  pdf.set_text_color(5, 150, 105)
+  pdf.cell(0, 8, "Active Portfolio Plans & Maturity Schedule", 0, 1)
+  pdf.set_font("Arial", "B", 9)
+  pdf.set_fill_color(230, 245, 235)
+  pdf.set_text_color(20, 20, 20)
+
+  pdf.cell(50, 7, "Plan Name", 1, 0, "C", True)
+  pdf.cell(30, 7, "Frequency", 1, 0, "C", True)
+  pdf.cell(30, 7, "Target (Rs)", 1, 0, "C", True)
+  pdf.cell(25, 7, "Maturity Date", 1, 0, "C", True)
+  pdf.cell(25, 7, "Withdrawal", 1, 0, "C", True)
+  pdf.cell(30, 7, "EMI / Deduction", 1, 1, "C", True)
+
+  pdf.set_font("Arial", "", 9)
+  if not df_sub.empty:
+    for _, row in df_sub.iterrows():
+      start_dt = pd.to_datetime(row["date"])
+      comp_dt = start_dt + pd.Timedelta(days=90)
+      w_dt = comp_dt + pd.Timedelta(days=30)
+
+      pdf.cell(50, 7, str(row["plan_name"]), 1, 0, "L")
+      pdf.cell(30, 7, str(row["frequency"]), 1, 0, "C")
+      pdf.cell(30, 7, f"Rs {row['target_amount']:,.0f}", 1, 0, "R")
+      pdf.cell(25, 7, comp_dt.strftime("%d-%m-%Y"), 1, 0, "C")
+      pdf.cell(25, 7, w_dt.strftime("%d-%m-%Y"), 1, 0, "C")
+      pdf.cell(30, 7, f"Rs {row['installment_amt']:,.2f}", 1, 1, "R")
+  else:
+    pdf.cell(190, 7, "No active portfolio subscriptions found.", 1, 1, "C")
+
+  pdf.ln(5)
+
+  # Transaction Audit History Table
+  pdf.set_font("Arial", "B", 12)
+  pdf.set_text_color(5, 150, 105)
+  pdf.cell(0, 8, "Transaction & E-Mandate Audit History", 0, 1)
+  pdf.set_font("Arial", "B", 9)
+  pdf.set_fill_color(230, 245, 235)
+  pdf.set_text_color(20, 20, 20)
+
+  pdf.cell(35, 7, "Date & Time", 1, 0, "C", True)
+  pdf.cell(45, 7, "Plan Reference", 1, 0, "C", True)
+  pdf.cell(30, 7, "Type", 1, 0, "C", True)
+  pdf.cell(35, 7, "Amount (Rs)", 1, 0, "C", True)
+  pdf.cell(45, 7, "Status", 1, 1, "C", True)
+
+  pdf.set_font("Arial", "", 8)
+  if not df_tx.empty:
+    for _, row in df_tx.iterrows():
+      pdf.cell(35, 6, str(row["date"]), 1, 0, "C")
+      pdf.cell(
+          45,
+          6,
+          str(row["plan_ref"]) if pd.notnull(row["plan_ref"]) else "General",
+          1,
+          0,
+          "L",
+      )
+      pdf.cell(30, 6, str(row["trans_type"]), 1, 0, "C")
+      pdf.cell(35, 6, f"Rs {row['amount']:,.2f}", 1, 0, "R")
+      pdf.cell(45, 6, str(row["status"]), 1, 1, "C")
+  else:
+    pdf.cell(190, 6, "No transaction records found.", 1, 1, "C")
+
+  return pdf.output(dest="S").encode("latin1")
 
 
 init_db()
@@ -578,8 +703,8 @@ if "current_user" not in st.session_state:
   st.session_state.current_user = ""
 if "forgot_user" not in st.session_state:
   st.session_state.forgot_user = ""
-if "selected_plan" not in st.session_state:
-  st.session_state.selected_plan = None
+if "selected_plans" not in st.session_state:
+  st.session_state.selected_plans = []
 
 # --- AUTHENTICATION SCREEN (SPLIT LAYOUT: LEFT HERO, RIGHT AUTH) ---
 if not st.session_state.logged_in:
@@ -593,13 +718,13 @@ if not st.session_state.logged_in:
                 Nurturing Wealth <br><span style="color: #34d399;">Across Generations</span>
             </h1>
             <p style="color: #cbd5e1; font-size: 16px; line-height: 1.6; margin-bottom: 25px;">
-                GullakCoin Pro is a next-generation structured milestone wealth platform. Watch your small savings grow from a delicate seedling into a majestic financial tree through automated startup allocations.
+                GullakCoin Pro is a next-generation structured milestone wealth platform. Watch your small savings grow from a delicate seedling into a majestic financial tree through multi-plan automated startup allocations.
             </p>
             <div class="growth-stage-banner" style="text-align: left; padding: 20px;">
                 <div class="growth-stages" style="justify-content: flex-start; gap: 20px;">
                     <span>🌱 Seedling</span> ➔ <span>🌿 Growth</span> ➔ <span>🌳 Plus</span> ➔ <span>🌲 Superplus</span>
                 </div>
-                <div class="growth-label" style="text-align: left; margin-top: 8px;">Automated 120-Day Milestone Wealth Cycles</div>
+                <div class="growth-label" style="text-align: left; margin-top: 8px;">Automated Multi-Plan 120-Day Wealth Cycles</div>
             </div>
         </div>
     """,
@@ -627,8 +752,6 @@ if not st.session_state.logged_in:
     if auth_mode == "Secure Login":
       l_user = st.text_input("Registered Email or Mobile Number", key="l_user")
       l_pass = st.text_input("Secure Password", type="password", key="l_pass")
-
-      # Biometric / Passkey Quick Login Simulator Toggle
       use_biometric = st.checkbox(
           "🔑 Quick Login via Device Passkey / Biometric Simulator"
       )
@@ -766,10 +889,12 @@ else:
       if not df_tx.empty
       else 0
   )
-  target_value = 0
-  active_plan = None
-  balance_target = 0
-  estimated_maturity = 0
+
+  # Total target value across all subscribed plans
+  total_target_value = (
+      df_sub["target_amount"].sum() if not df_sub.empty else 0
+  )
+  balance_target = max(total_target_value - portfolio_value, 0)
 
 
   def calculate_payout(target, freq):
@@ -805,14 +930,6 @@ else:
     )
 
 
-  if not df_sub.empty:
-    active_plan = df_sub.iloc[0]
-    target_value = active_plan["target_amount"]
-    balance_target = max(target_value - portfolio_value, 0)
-    estimated_maturity, _, _, _, _, _, _ = calculate_payout(
-        target_value, active_plan["frequency"]
-    )
-
   # SIDEBAR
   st.sidebar.markdown(f"**👤 {username}**")
   st.sidebar.markdown(f"🆔 `{investor_id}`")
@@ -839,15 +956,15 @@ else:
   if st.sidebar.button("🚪 Logout", type="primary", use_container_width=True):
     st.session_state.logged_in = False
     st.session_state.current_user = ""
-    st.session_state.selected_plan = None
+    st.session_state.selected_plans = []
     st.rerun()
 
   # HEADER METRICS
   col1, col2, col3, col4 = st.columns(4)
   with col1:
-    st.metric("Portfolio Value", f"₹ {portfolio_value:,.2f}")
+    st.metric("Total Portfolio Value", f"₹ {portfolio_value:,.2f}")
   with col2:
-    st.metric("Target Value", f"₹ {target_value:,.0f}")
+    st.metric("Total Target Value", f"₹ {total_target_value:,.0f}")
   with col3:
     st.metric(
         "Balance Target",
@@ -855,12 +972,8 @@ else:
         if balance_target > 0
         else "✅ Completed",
     )
-
   with col4:
-    if portfolio_value >= target_value and target_value > 0:
-      st.metric("Estimated Maturity", f"₹ {estimated_maturity:,.0f}")
-    else:
-      st.metric("Estimated Maturity", "🔒 Locked")
+    st.metric("Active Subscriptions", f"{len(df_sub)} Plans")
 
   st.markdown("---")
 
@@ -869,18 +982,18 @@ else:
     st.subheader("⚡ AI Master Autopilot Agent (Fully Automated)")
     st.markdown(
         "<p style='color: #cbd5e1;'>This intelligent agent continuously"
-        " monitors your account, auto-heals failed E-Mandates, optimizes your"
-        " streak bonuses, and manages your compounding wealth lifecycle"
-        " autonomously.</p>",
+        " monitors all your active multi-plan portfolios, auto-heals failed"
+        " E-Mandates across plans, and manages your compounding wealth"
+        " lifecycle autonomously.</p>",
         unsafe_allow_html=True,
     )
 
     st.markdown(
         """
         <div class="autopilot-box">
-            <h4 style="color: #38bdf8; margin-top:0;">🤖 Autonomous Operations Center</h4>
+            <h4 style="color: #38bdf8; margin-top:0;">🤖 Autonomous Multi-Plan Operations Center</h4>
             <p style="margin-bottom: 5px;">Status: <b style="color: #34d399;">🟢 ACTIVE & MONITORING</b></p>
-            <p style="font-size: 13px; color: #cbd5e1; margin-bottom:0;">The AI Agent executes routine compliance, transaction healing, and yield boost checks in real time.</p>
+            <p style="font-size: 13px; color: #cbd5e1; margin-bottom:0;">The AI Agent executes routine multi-plan compliance, transaction healing, and yield boost checks in real time.</p>
         </div>
         """,
         unsafe_allow_html=True,
@@ -888,12 +1001,12 @@ else:
 
     if st.button("🚀 Run Full Autopilot Diagnostic & Optimization", type="primary"):
       with st.spinner(
-          "🤖 Master AI Agent is scanning your financial profile and executing"
+          "🤖 Master AI Agent is scanning all active plans and executing"
           " automated workflows..."
       ):
         time.sleep(1.5)
         actions = MasterAutopilotAgent.run_autopilot_routine(
-            username, active_plan, kyc_status
+            username, df_sub, kyc_status
         )
       st.success("✅ Autopilot diagnostic completed successfully!")
       st.markdown("### 📋 Executed Automated Actions:")
@@ -901,320 +1014,192 @@ else:
         st.markdown(f"- {action}")
 
   elif menu == "📦 Product offerings":
-    if st.session_state.selected_plan is None:
-      st.markdown("## Auto-Invest in Promising Startups.")
-      st.markdown(
-          "<p style='color: #cbd5e1; font-size: 16px; margin-bottom: 5px;'>Select"
-          " a structured allocation plan below to view projections and E-Mandate"
-          " frequencies.</p>",
-          unsafe_allow_html=True,
-      )
+    st.markdown("## Auto-Invest in Promising Startups.")
+    st.markdown(
+        "<p style='color: #cbd5e1; font-size: 16px; margin-bottom: 5px;'>Select"
+        " one or multiple structured allocation plans below, choose frequencies,"
+        " and authorize E-Mandates in bulk!</p>",
+        unsafe_allow_html=True,
+    )
 
-      st.markdown(
-          """
-            <div class="comparison-box">
-                <b>💡 Why choose GullakCoin Pro over traditional Bank FD / Savings Account?</b><br>
-                While a standard bank savings account or short-term FD yields a nominal 3% to 7% p.a., our 4-month structured milestone model (3 Months SIP + 1 Month Hold) targets significantly higher net growth through diversified startup allocations. Lock in your funds for 120 days to unlock superior returns compared to traditional banking.
-            </div>
-            """,
-          unsafe_allow_html=True,
-      )
+    st.markdown(
+        """
+        <div class="comparison-box">
+            <b>💡 Multi-Plan E-Mandate Investment:</b><br>
+            You can select multiple startup tiers simultaneously (e.g., Seed + Growth + Superplus). Once you authorize E-Mandates for your selected plans, all active portfolios will appear together in your <b>'My Portfolio'</b> dashboard and certified PDF account summary.
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.write("")
 
-      st.markdown(
-          "<p class='disclaimer'>*Disclaimer: All target yields are estimates"
-          " based on quantitative models and carry market risks.</p>",
-          unsafe_allow_html=True,
-      )
-      st.write("")
-
-      plans = [
-          (
-              "GullakCoin Seed",
-              5000,
-              (
-                  "Best for early-stage startup exposure with balanced"
-                  " micro-tickets."
-              ),
-              "seed",
-          ),
-          (
-              "GullakCoin Growth",
-              25000,
-              "For dynamically scaling an emerging startup portfolio.",
-              "growth",
-          ),
-          (
-              "GullakCoin Plus",
-              50000,
-              "Advanced access into mid-stage startup rounds.",
-              "plus",
-          ),
-          (
-              "GullakCoin Superplus",
-              100000,
-              "Exclusive curated high-net-worth venture allocations.",
-              "superplus",
-          ),
-      ]
-
-      cols = st.columns(4)
-      for i, (title, target_amt, desc, key_id) in enumerate(plans):
-        with cols[i]:
-          st.markdown(
-              f"""
-                    <div class="plan-card">
-                        <div class="plan-title">{title}</div>
-                        <div class="plan-desc">{desc}</div>
-                        <div class="plan-target">🎯 Target: ₹ {target_amt:,.0f}</div>
-                    </div>
-                    """,
-              unsafe_allow_html=True,
-          )
-          if st.button(
-              f"Explore {title.split()[-1]}",
-              key=f"expl_{key_id}",
-              use_container_width=True,
-          ):
-            st.session_state.selected_plan = {
-                "title": title,
-                "target": target_amt,
-                "desc": desc,
-            }
-            st.rerun()
-    else:
-      plan = st.session_state.selected_plan
-      target_amt = plan["target"]
-      title = plan["title"]
-
-      if st.button("⬅️ Back to All Plans"):
-        st.session_state.selected_plan = None
-        st.rerun()
-
-      st.markdown(
-          f"<h1>{title} <span style='color: #34d399;'>| Target: ₹"
-          f" {target_amt:,.0f}</span></h1>",
-          unsafe_allow_html=True,
-      )
-      st.write(plan["desc"])
-
-      st.markdown(
-          """
-            <div class="strict-rule-box">
-                <b>⚠️ Important Lock-in & E-Mandate Rule:</b><br>
-                Once you authorize AutoPay, installments deduct automatically. <b>You cannot withdraw</b> your funds until the full Target Principal and maturity cycle are 100% completed. In case of insufficient bank balance, a 5-day grace period applies before cycle timeline extension.
-            </div>
-            """,
-          unsafe_allow_html=True,
-      )
-
-      st.subheader("Configure AutoPay E-Mandate Frequency:")
-
-      freqs = [
-          ("Daily", target_amt / 90, 0.08),
-          ("Weekly", (target_amt / 90) * 7, 0.10),
-          ("Monthly", target_amt / 3, 0.18),
-      ]
-
-      f_cols = st.columns(3)
-      for i, (f_name, f_amt, f_roi) in enumerate(freqs):
+    plans_def = [
         (
-            maturity,
-            fee,
-            gst,
-            net_payout,
-            net_profit,
-            bonus,
-            total_installments,
-        ) = calculate_payout(target_amt, f_name)
-        with f_cols[i]:
-          bonus_text = (
-              f" (+{bonus*100:.1f}% AI Streak Bonus)" if bonus > 0 else ""
+            "GullakCoin Seed",
+            5000,
+            (
+                "Best for early-stage startup exposure with balanced"
+                " micro-tickets."
+            ),
+            "seed",
+        ),
+        (
+            "GullakCoin Growth",
+            25000,
+            "For dynamically scaling an emerging startup portfolio.",
+            "growth",
+        ),
+        (
+            "GullakCoin Plus",
+            50000,
+            "Advanced access into mid-stage startup rounds.",
+            "plus",
+        ),
+        (
+            "GullakCoin Superplus",
+            100000,
+            "Exclusive curated high-net-worth venture allocations.",
+            "superplus",
+        ),
+    ]
+
+    selected_checkout_plans = []
+
+    c_cols = st.columns(4)
+    for i, (title, target_amt, desc, key_id) in enumerate(plans_def):
+      with c_cols[i]:
+        st.markdown(
+            f"""
+                <div class="plan-card">
+                    <div class="plan-title">{title}</div>
+                    <div class="plan-desc">{desc}</div>
+                    <div class="plan-target">🎯 Target: ₹ {target_amt:,.0f}</div>
+                </div>
+                """,
+            unsafe_allow_html=True,
+        )
+        is_sel = st.checkbox(f"Select {title}", key=f"chk_{key_id}")
+        if is_sel:
+          selected_checkout_plans.append(
+              {"title": title, "target": target_amt}
           )
-          st.markdown(
-              f"""
-                    <div class="detail-card">
-                        <h3 style='margin-bottom:0;'>{f_name} SIP</h3>
-                        <p style='color: #cbd5e1;'>Deduction: <b>₹ {f_amt:,.2f}</b></p>
-                        <hr style='border-color: #047857;'>
-                        <p style='text-align: left; font-size: 13px; color: #f1f5f9;'>
-                            <b>Target Yield Est.:</b> {f_roi*100:.0f}%{bonus_text}<br>
-                            <b>Gross Maturity:</b> ₹ {maturity:,.2f}<br>
-                            <span style='color: #fbbf24;'><b>Tenure:</b> 3 Months</span><br>
-                            <span style='color: #fbbf24;'><b>Lock-in Period:</b> 1 Month</span><br>
-                            <b>Platform Fee + GST:</b> -₹ {fee+gst:,.2f}<br><br>
-                            <span style='color: #34d399; font-size: 15px;'><b>Est. Net Payout: ₹ {net_payout:,.2f}</b></span><br>
-                            <span style='color: #38bdf8; font-size: 14px;'><b>Total EMIs to Deduct: {total_installments} Installments</b></span>
-                        </p>
-                    </div>
-                    """,
-              unsafe_allow_html=True,
+
+    st.markdown("---")
+    if selected_checkout_plans:
+      st.subheader(
+          "⚡ Bulk E-Mandate Authorization for Selected Plans"
+          f" ({len(selected_checkout_plans)} Plans)"
+      )
+      bulk_freq = st.selectbox(
+          "Select Unified E-Mandate Frequency for Selected Plans",
+          ["Daily SIP", "Weekly SIP", "Monthly SIP"],
+      )
+
+      if st.button(
+          "🚀 Authorize Bulk E-Mandates for All Selected Plans",
+          type="primary",
+      ):
+        try:
+          for p in selected_checkout_plans:
+            t_amt = p["target"]
+            if "Daily" in bulk_freq:
+              inst = t_amt / 90
+            elif "Weekly" in bulk_freq:
+              inst = (t_amt / 90) * 7
+            else:
+              inst = t_amt / 3
+
+            add_subscription(
+                username, p["title"], t_amt, bulk_freq, float(inst)
+            )
+
+          st.success(
+              f"✅ E-Mandate successfully authorized for {len(selected_checkout_plans)}"
+              " plans! Check 'My Portfolio'."
           )
-          if st.button(
-              f"Authorize {f_name} AutoPay",
-              key=f"sub_{f_name}",
-              type="primary",
-              use_container_width=True,
-          ):
-            try:
-              # Cashfree Order Registration
-              add_subscription(username, title, target_amt, f_name, f_amt)
-              st.success(
-                  f"✅ E-Mandate registered successfully for {title} via"
-                  f" {f_name} SIP!"
-              )
-              st.session_state.selected_plan = None
-              time.sleep(2)
-              st.rerun()
-            except Exception as e:
-              st.error(f"Error: {e}")
+          time.sleep(2)
+          st.rerun()
+        except Exception as e:
+          st.error(f"Error authorizing E-Mandate: {e}")
+    else:
+      st.info(
+          "👆 Check the box on any plan(s) above to configure and authorize"
+          " bulk E-Mandates."
+      )
 
   elif menu == "📊 My Portfolio":
-    st.subheader("Active Asset Allocation & Projections")
-    if active_plan is not None:
+    st.subheader("Active Multi-Plan Portfolios & Account Summary")
+
+    if not df_sub.empty:
       # --- CALLING GAMIFICATION PLUGIN WIDGET ---
       GamificationPlugin.render_widget(df_tx)
 
       failed_txs = df_tx[df_tx["status"] == "Failed (Insufficient Balance)"]
-
       if not failed_txs.empty:
         st.markdown(
-            f"""
+            """
                 <div class="alert-failed">
-                    <b>⚠️ AutoPay E-Mandate Failure Detected!</b><br>
-                    Your recent installment of <b>₹ {active_plan['installment_amt']:,.2f}</b> failed due to insufficient bank balance. A 5-day grace period is active. Please clear your missed payment to prevent timeline extension.
+                    <b>⚠️ AutoPay E-Mandate Failure Detected on One or More Plans!</b><br>
+                    A 5-day grace period is active. Please clear missed installments to prevent timeline extension.
                 </div>
                 """,
             unsafe_allow_html=True,
         )
 
-        if st.button(
-            "💳 Pay Missed Installment Now (Manual UPI/Card)", type="primary"
-        ):
-          conn = sqlite3.connect("gullakcoin_advanced.db")
-          c = conn.cursor()
-          dt = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-          c.execute(
-              "INSERT INTO transactions (username, trans_type, category,"
-              " amount, status, date) VALUES (?, ?, ?, ?, ?, ?)",
-              (
-                  username,
-                  "Income",
-                  "Investment",
-                  active_plan["installment_amt"],
-                  "Success",
-                  dt,
-              ),
-          )
-          conn.commit()
-          conn.close()
-          st.success(
-              "✅ Missed installment cleared successfully! Your cycle is back on"
-              " track."
-          )
-          time.sleep(2)
-          st.rerun()
+      st.markdown("### 🌿 All Active Subscribed Portfolios")
+      portfolio_display_list = []
+      for _, row in df_sub.iterrows():
+        s_date = pd.to_datetime(row["date"])
+        c_date = s_date + pd.Timedelta(days=90)
+        w_date = c_date + pd.Timedelta(days=30)
+        portfolio_display_list.append({
+            "Plan Name": row["plan_name"],
+            "Frequency": row["frequency"],
+            "Target Principal (₹)": f"₹ {row['target_amount']:,.0f}",
+            "Installment (₹)": f"₹ {row['installment_amt']:,.2f}",
+            "Maturity Date": c_date.strftime("%d %B %Y"),
+            "Withdrawal Unlock": w_date.strftime("%d %B %Y"),
+        })
 
-      p_col1, p_col2, p_col3 = st.columns(3)
-      with p_col1:
-        st.info(f"**Active Plan:** {active_plan['plan_name']}")
-      with p_col2:
-        st.info(f"**Target Principal:** ₹ {active_plan['target_amount']:,.0f}")
-      with p_col3:
-        st.info(f"**Frequency:** {active_plan['frequency']}")
-
-      st.progress(min(portfolio_value / target_value, 1.0))
-      st.write(
-          f"Accumulated via AutoPay: **₹ {portfolio_value:,.2f}** out of ₹"
-          f" {target_value:,.0f}"
+      st.dataframe(
+          pd.DataFrame(portfolio_display_list),
+          use_container_width=True,
+          hide_index=True,
       )
+
       st.markdown("---")
 
-      start_date = pd.to_datetime(active_plan["date"])
-      completion_date = start_date + pd.Timedelta(days=90)
-      withdrawal_date = completion_date + pd.Timedelta(days=30)
-      current_time = pd.Timestamp.now()
+      # --- DOWNLOAD PDF ACCOUNT SUMMARY BUTTON ---
+      st.subheader("📄 Download Certified Account Summary PDF")
+      st.markdown(
+          "<p style='color: #cbd5e1;'>Download your complete official account"
+          " summary report containing plan-wise EMI breakdowns, target"
+          " balances, maturity dates, and withdrawal schedules.</p>",
+          unsafe_allow_html=True,
+      )
 
-      is_target_completed = portfolio_value >= target_value
-      is_lockin_passed = current_time >= withdrawal_date
+      pdf_bytes = generate_pdf_summary(
+          username, investor_id, kyc_status, df_sub, df_tx
+      )
+      st.download_button(
+          label="📥 Download Account Summary Report (PDF)",
+          data=pdf_bytes,
+          file_name=f"GullakCoin_Account_Summary_{investor_id}.pdf",
+          mime="application/pdf",
+          type="primary",
+      )
 
-      st.subheader("Maturity & Redemption Portal")
-
-      if not is_target_completed:
-        st.markdown(
-            f"""
-                <div class="locked-box">
-                    <h3 style="color: #fbbf24; margin-bottom: 5px;">🔒 Maturity & Withdrawal Locked</h3>
-                    <p style="color: #fef3c7; font-size: 14px;">Your SIP deductions are ongoing. Withdrawals remain strictly locked until your <b>Target Principal of ₹ {target_value:,.0f}</b> is fully accumulated.</p>
-                </div>
-                """,
-            unsafe_allow_html=True,
-        )
-      else:
-        if "Verified" not in kyc_status:
-          st.error(
-              "🚨 Withdrawal Blocked: Your Bank Details & KYC Verification is"
-              " Pending/Mismatch. Please go to 'Profile & KYC' to complete"
-              " verification with your registered mobile number."
-          )
-        else:
-          w_col1, w_col2 = st.columns(2)
-          with w_col1:
-            st.success("✅ Target 100% Achieved & Bank Verified!")
-            st.write(
-                f"📅 **Target Completion Date:**"
-                f" {completion_date.strftime('%d %B %Y')}"
-            )
-            st.write(
-                f"🔓 **Redemption Unlock Date:**"
-                f" {withdrawal_date.strftime('%d %B %Y')}"
-            )
-
-          with w_col2:
-            maturity, fee, gst, net_payout, net_profit, _, _ = calculate_payout(
-                target_value, active_plan["frequency"]
-            )
-            st.metric("Achieved Maturity Value", f"₹ {maturity:,.2f}")
-
-            if not is_lockin_passed:
-              unlock_str = withdrawal_date.strftime("%d %B %Y")
-              st.warning(
-                  f"⏳ Withdrawal unlocks on {unlock_str} (1-month hold period"
-                  " active)."
-              )
-              st.button(
-                  "Initiate Withdrawal Request",
-                  disabled=True,
-                  use_container_width=True,
-              )
-            else:
-              if st.button(
-                  "Initiate Withdrawal Request",
-                  type="primary",
-                  use_container_width=True,
-              ):
-                st.success(
-                    "✅ Redemption request queued successfully for bank"
-                    " transfer."
-                )
-                st.code(f"""
-Gross Maturity Amount : ₹ {maturity:,.2f}
-- Processing Fee (2%) : ₹ {fee:,.2f}
-- GST on Fee (18%)    : ₹ {gst:,.2f}
------------------------------------
-Net Bank Credit       : ₹ {net_payout:,.2f}
-Estimated Net Gain    : ₹ {net_profit:,.2f}
-                                """)
     else:
       st.warning(
-          "No active capital allocations found. Explore product offerings to"
-          " initiate a plan."
+          "No active capital allocations found. Go to 'Product offerings' to"
+          " select and authorize plans."
       )
 
   elif menu == "🌳 Family Wealth Tree":
     FamilyWealthTreePlugin.render_tree_dashboard(username)
 
   elif menu == "📝 Transaction History":
-    st.subheader("Automated E-Mandate Audit Logs")
+    st.subheader("Automated E-Mandate Audit Logs (Plan-Wise Summary)")
 
     if not df_sub.empty:
       with st.expander("🛠️ Developer Sandbox: Simulate E-Mandate Failure"):
@@ -1222,18 +1207,27 @@ Estimated Net Gain    : ₹ {net_profit:,.2f}
             "Simulate Insufficient Balance (Fail Next Installment)",
             type="secondary",
         ):
-          active_inst = df_sub.iloc[0]["installment_amt"]
-          log_failed_transaction(username, active_inst)
+          sample_plan = df_sub.iloc[0]["plan_name"]
+          sample_inst = df_sub.iloc[0]["installment_amt"]
+          log_failed_transaction(username, sample_plan, sample_inst)
           st.warning(
-              "⚠️ Simulated E-Mandate failure recorded! Check 'My Portfolio'."
+              f"⚠️ Simulated E-Mandate failure recorded for {sample_plan}!"
           )
           time.sleep(1)
           st.rerun()
 
     if not df_tx.empty:
       st.dataframe(
-          df_tx[["date", "trans_type", "category", "amount", "status"]]
-          .sort_values(by="date", ascending=False),
+          df_tx[
+              [
+                  "date",
+                  "plan_ref",
+                  "trans_type",
+                  "category",
+                  "amount",
+                  "status",
+              ]
+          ].sort_values(by="date", ascending=False),
           use_container_width=True,
           hide_index=True,
       )
@@ -1243,8 +1237,8 @@ Estimated Net Gain    : ₹ {net_profit:,.2f}
   elif menu == "🤖 AI Wealth Advisor":
     st.subheader("🤖 Smart Wealth Advisor & Voice Copilot")
     st.write(
-        "Ask anything about your investment strategy, startup allocation, or"
-        " portfolio targets!"
+        "Ask anything about your investment strategy, multi-plan startup"
+        " allocation, or portfolio targets!"
     )
 
     # --- VOICE-CONTROLLED AI FINANCIAL COPILOT (NATIVE AUDIO INPUT) ---
@@ -1258,8 +1252,9 @@ Estimated Net Gain    : ₹ {net_profit:,.2f}
       simulated_voice_query = "What is my portfolio status?"
       st.info(f"🗣️ **Recognized Voice Query:** *{simulated_voice_query}*")
       st.write(
-          f"📊 **Copilot Response:** Your current active portfolio value is"
-          f" **₹ {portfolio_value:,.2f}** out of target **₹ {target_value:,.0f}**."
+          f"📊 **Copilot Response:** Your total active portfolio value is"
+          f" **₹ {portfolio_value:,.2f}** across active plans (Total Target:"
+          f" ₹ {total_target_value:,.0f})."
       )
     st.markdown("---")
 
@@ -1294,17 +1289,14 @@ Estimated Net Gain    : ₹ {net_profit:,.2f}
               return (
                   "🔄 **What is an E-Mandate? (Protocol Agent)**: An E-Mandate"
                   " (AutoPay / E-NACH) is an automated authorization given to"
-                  " your bank to deduct your chosen SIP amount (Daily,"
-                  " Weekly, or Monthly) on schedule."
+                  " your bank to deduct your chosen SIP amount across all your"
+                  " selected plans on schedule."
               )
             elif any(k in query for k in ["product", "offering", "tiers"]):
               return (
                   "📦 **Product Offerings (Allocation Agent)**: GullakCoin Pro"
-                  " offers 4 structured startup allocation tiers:\n1."
-                  " **GullakCoin Seed** (Target ₹ 5,000)\n2. **GullakCoin"
-                  " Growth** (Target ₹ 25,000)\n3. **GullakCoin Plus** (Target"
-                  " ₹ 50,000)\n4. **GullakCoin Superplus** (Target ₹"
-                  " 100,000)"
+                  " offers 4 structured startup allocation tiers that you can"
+                  " select and invest in simultaneously!"
               )
             elif any(k in query for k in ["120", "lock", "hold"]):
               return (
@@ -1322,52 +1314,16 @@ Estimated Net Gain    : ₹ {net_profit:,.2f}
                   " lock-in passes, click **'Initiate Withdrawal Request'**"
                   " under **'My Portfolio'**."
               )
-            elif any(k in query for k in ["plan", "choose", "select"]):
+            elif any(k in query for k in ["pdf", "summary", "download"]):
               return (
-                  "🎯 **Plan Selection (Execution Agent)**: Go to the **'Product"
-                  " offerings'** tab, pick your target tier, choose your"
-                  " frequency, and authorize AutoPay."
-              )
-            elif any(
-                k in query for k in ["emi", "deduct", "installment", "how many"]
-            ):
-              return (
-                  f"💳 **EMI & Deductions for {username} (Ledger Agent)**:"
-                  " Installments depend on frequency (Daily: 90, Weekly: 13,"
-                  " Monthly: 3). Check audit logs under **'Transaction"
-                  " History'**."
-              )
-            elif any(k in query for k in ["transaction", "history", "ledger"]):
-              return (
-                  "📝 **Transaction History (Audit Agent)**: Open the"
-                  " **'Transaction History'** tab to audit past successful"
-                  " investments and simulated failures."
-              )
-            elif any(k in query for k in ["portfolio", "balance", "value"]):
-              return (
-                  f"📊 **Portfolio Overview (Analytics Agent)**: Your active"
-                  f" portfolio value is **₹ {portfolio_value:,.2f}** out of target"
-                  f" **₹ {target_value:,.0f}**."
-              )
-            elif any(k in query for k in ["kyc", "pan", "bank"]):
-              return (
-                  f"🛡️ **KYC & Bank Status (Compliance Agent)**: Current"
-                  f" status is **{kyc_status}**. Ensure your bank registered"
-                  f" mobile number matches your login ID (`{username}`)."
-              )
-            elif any(
-                k in query for k in ["detector", "streak", "bonus", "predictor"]
-            ):
-              return (
-                  "🤖 **AI Yield Predictor (Gamification Agent)**: Maintaining"
-                  " 3+ consecutive successful AutoPay installments awards you"
-                  " the Gold Investor Badge and an extra **+1.0% AI Streak Yield"
-                  " Bonus**!"
+                  "📄 **PDF Account Summary (Export Agent)**: Go to the **'My"
+                  " Portfolio'** tab to download your official certified PDF"
+                  " report with complete plan breakdowns."
               )
             else:
               return (
                   f"💡 **DeepSeek Harness Advisor Insight**: Regarding your"
-                  f" query about *'{user_prompt}'*, GullakCoin Pro's structured"
+                  f" query about *'{user_prompt}'*, GullakCoin Pro's multi-plan"
                   " milestone model delivers superior net returns compared to"
                   " standard bank FDs."
               )
@@ -1515,83 +1471,32 @@ Estimated Net Gain    : ₹ {net_profit:,.2f}
     st.subheader("❓ Frequently Asked Questions & Portfolio Guide")
     st.markdown(
         "<p style='color: #cbd5e1;'>Complete guidance on GullakCoin Pro's"
-        " automated wealth model, portfolio tiers, and E-Mandate"
-        " workflows.</p>",
+        " automated multi-plan wealth model and PDF report exports.</p>",
         unsafe_allow_html=True,
     )
 
-    with st.expander("Q1: What is GullakCoin Pro and how does it work?"):
+    with st.expander(
+        "Q1: Can I select and invest in multiple plans simultaneously?"
+    ):
       st.write(
-          "A: GullakCoin Pro is a next-generation structured milestone wealth"
-          " platform. It allows you to micro-invest in high-growth startup"
-          " allocations through automated E-Mandate (AutoPay) cycles spanning 4"
-          " months (3 months accumulation + 1 month hold period)."
+          "A: Yes! Under the **'Product offerings'** tab, you can check boxes"
+          " for multiple plans (e.g., Seed, Growth, Superplus) at once and"
+          " authorize bulk E-Mandates. All selected plans will appear together"
+          " in your portfolio and PDF summary."
       )
 
     with st.expander(
-        "Q2: What are the Portfolio Tiers and their detailed allocations?"
-    ):
-      st.markdown("""
-            A: GullakCoin Pro offers 4 structured startup allocation tiers designed for different risk-reward profiles:
-            * **1. GullakCoin Seed Plan (Target: ₹ 5,000)**
-              * *Best for:* Early-stage startup exposure with low micro-tickets.
-              * *Daily SIP:* ~₹ 55.56 | *Weekly SIP:* ~₹ 384.62 | *Monthly SIP:* ₹ 1,666.67
-              * *Target Net Yield:* 8% to 9% p.a. equivalent base + AI streak bonus.
-            * **2. GullakCoin Growth Plan (Target: ₹ 25,000)**
-              * *Best for:* Dynamically scaling an emerging startup portfolio.
-              * *Daily SIP:* ~₹ 277.78 | *Weekly SIP:* ~₹ 1,923.08 | *Monthly SIP:* ₹ 8,333.33
-              * *Target Net Yield:* 10% base + streak bonuses.
-            * **3. GullakCoin Plus Plan (Target: ₹ 50,000)**
-              * *Best for:* Advanced access into mid-stage venture rounds.
-              * *Daily SIP:* ~₹ 555.56 | *Weekly SIP:* ~₹ 3,846.15 | *Monthly SIP:* ₹ 16,666.67
-              * *Target Net Yield:* 12% base allocation performance.
-            * **4. GullakCoin Superplus Plan (Target: ₹ 1,000,000 / ₹ 1 Lakh)**
-              * *Best for:* Exclusive curated high-net-worth venture allocations.
-              * *Daily SIP:* ~₹ 1,111.11 | *Weekly SIP:* ~₹ 7,692.30 | *Monthly SIP:* ₹ 33,333.33
-              * *Target Net Yield:* 18% base + VIP venture growth returns.
-            """)
-
-    with st.expander(
-        "Q3: What is the 120-Day Lock-in & Maturity Rule in Portfolios?"
+        "Q2: How does Transaction History track plan-wise E-Mandates?"
     ):
       st.write(
-          "A: Every active portfolio follows a strict 120-day lifecycle: **90"
-          " days of continuous SIP installments** (accumulation phase) followed"
-          " by a **30-day holding lock-in** to optimize startup venture"
-          " returns. Withdrawals remain strictly locked until the Target"
-          " Principal is 100% achieved and the hold period is cleared."
+          "A: Every deduction or transaction in your audit log is tagged with"
+          " its respective plan name (`plan_ref`), making it easy to see which"
+          " plan's E-Mandate hit."
       )
 
-    with st.expander(
-        "Q4: What happens if my E-Mandate / AutoPay installment fails?"
-    ):
+    with st.expander("Q3: How do I download my Account Summary PDF?"):
       st.write(
-          "A: If an installment fails due to an insufficient bank balance, a"
-          " **5-day grace period** is triggered. Our AI Master Autopilot agent"
-          " or manual payment option allows you to clear the missed"
-          " installment via UPI/Card to prevent timeline extension."
-      )
-
-    with st.expander("Q5: How does the AI Master Autopilot work?"):
-      st.write(
-          "A: The AI Master Autopilot continuously monitors your compliance,"
-          " auto-heals failed transactions using liquidity reserves, optimizes"
-          " your streak rewards, and tracks your progress across generations."
-      )
-
-    with st.expander(
-        "Q6: How do I withdraw my funds after maturity is completed?"
-    ):
-      st.write(
-          "A: Once your target principal is 100% reached, your KYC is verified"
-          " (bank mobile matching login ID), and the 30-day holding period"
-          " lapses, you can click **'Initiate Withdrawal Request'** under the"
-          " **'My Portfolio'** tab for direct net bank credit."
-      )
-
-    with st.expander("Q7: What is the Family Wealth Tree feature?"):
-      st.write(
-          "A: It allows you to add secondary seedlings or beneficiaries (such"
-          " as children or spouse) with dedicated milestone goals like Higher"
-          " Education or Wedding Funds to build generational wealth."
+          "A: Go to the **'My Portfolio'** tab. Scroll down to the certified"
+          " export section and click **'📥 Download Account Summary Report"
+          " (PDF)'** to instantly save your complete statement."
       )
