@@ -1083,124 +1083,105 @@ Estimated Net Gain    : ₹ {net_profit:,.2f}
         with st.spinner("Smart AI Advisor is analyzing..."):
           q = user_prompt.lower()
 
-          # Comprehensive Intelligent Response Matcher (Covers all questions specifically)
-          if (
-              "mandate fail" in q
-              or "e-mandate fail" in q
-              or "payment fail" in q
-              or "insufficient" in q
-          ):
-            ai_response = (
-                "⚠️ **Failed E-Mandate Resolution**: If an installment fails"
-                " due to insufficient bank balance, a **5-day grace period**"
-                " becomes active. You can immediately clear the missed"
-                " installment manually using **UPI / Debit Card** from the"
-                " **'My Portfolio'** tab to prevent tenure extension."
-            )
-          elif (
-              "what is e-mandate" in q
-              or "what is mandate" in q
-              or "e-nach" in q
-              or "enach" in q
-          ):
-            ai_response = (
-                "🔄 **What is an E-Mandate?**: An E-Mandate (AutoPay / E-NACH)"
-                " is an automated authorization given to your bank to deduct"
-                " your chosen SIP amount (Daily, Weekly, or Monthly) on"
-                " schedule. This ensures you never miss an installment and"
-                " maintains your **AI Streak Bonus**."
-            )
-          elif "product" in q or "offering" in q or "tiers" in q:
-            ai_response = (
-                "📦 **Product Offerings**: GullakCoin Pro offers 4 structured"
-                " startup allocation tiers:\n1. **GullakCoin Seed** (Target ₹"
-                " 5,000)\n2. **GullakCoin Growth** (Target ₹"
-                " 25,000)\n3. **GullakCoin Plus** (Target ₹"
-                " 50,000)\n4. **GullakCoin Superplus** (Target ₹"
-                " 100,000)\n\nEach plan runs for 3 months of SIP + 1 month of"
-                " hold period."
-            )
-          elif "120" in q or "lock" in q or "hold" in q:
-            ai_response = (
-                "⏳ **120 Days Lock-in Rule**: Our milestone model consists of"
-                " **90 days (3 months) of SIP accumulation** followed by a"
-                " **30 days (1 month) holding lock-in**. Capital remains locked"
-                " during this entire cycle to maximize startup allocation"
-                " returns."
-            )
-          elif (
-              "withdraw" in q
-              or "payout" in q
-              or "redeem" in q
-              or "redemption" in q
-          ):
-            ai_response = (
-                "💸 **Withdrawal Process**: Once your target is 100% achieved,"
-                " your KYC is verified, and the 30-day lock-in has passed, a"
-                " green **'Initiate Withdrawal Request'** button activates"
-                " under **'My Portfolio'**. Net funds are transferred directly"
-                " to your bank account."
-            )
-          elif "plan" in q or "choose" in q or "select" in q:
-            ai_response = (
-                "🎯 **Plan Selection**: Go to the **'Product offerings'** tab,"
-                " review the target principals, select your preferred plan,"
-                " choose Daily/Weekly/Monthly frequency, and click"
-                " **'Authorize AutoPay'**."
-            )
-          elif (
-              "emi" in q
-              or "deduct" in q
-              or "installment" in q
-              or "how many" in q
-          ):
-            ai_response = (
-                f"💳 **EMI & Deductions for {username}**: Installment"
-                " deductions depend on your selected frequency (Daily: 90"
-                " installments, Weekly: 13 installments, Monthly: 3"
-                " installments). You can track every deduction under"
-                " **'Transaction History'**."
-            )
-          elif "transaction" in q or "history" in q or "ledger" in q:
-            ai_response = (
-                "📝 **Transaction History**: Open the **'Transaction"
-                " History'** tab from the left sidebar to audit all your past"
-                " successful investments and simulated failures."
-            )
-          elif "portfolio" in q or "balance" in q or "value" in q:
-            ai_response = (
-                f"📊 **Portfolio Overview**: Your active portfolio value is"
-                f" **₹ {portfolio_value:,.2f}** out of target **₹"
-                f" {target_value:,.0f}**. Balance left to accumulate: **₹"
-                f" {balance_target:,.2f}**."
-            )
-          elif "kyc" in q or "pan" in q or "bank" in q:
-            ai_response = (
-                f"🛡️ **KYC & Bank Status**: Your current status is"
-                f" **{kyc_status}**. To verify, submit your PAN, Aadhaar, and"
-                f" Bank details ensuring your registered bank mobile is"
-                f" `{username}`."
-            )
-          elif (
-              "detector" in q
-              or "streak" in q
-              or "bonus" in q
-              or "predictor" in q
-          ):
-            ai_response = (
-                "🤖 **AI Yield Predictor & Streak Tracker**: Maintaining 3 or"
-                " more consecutive successful AutoPay installments awards you"
-                " the Gold Investor Badge and an extra **+1.0% AI Streak Yield"
-                " Bonus** at maturity!"
-            )
-          else:
-            ai_response = (
-                "💡 **GullakCoin Pro Financial Advisory**: GullakCoin Pro"
-                " offers automated startup micro-allocations delivering superior"
-                " net returns compared to standard 3-7% bank FDs. You can ask"
-                " about Plans, E-Mandates, Lock-in Periods, KYC, or Withdrawals!"
-            )
+          # DeepSeek Harness Inspired Multi-Agent Plugin & Dispatcher Architecture
+          def dispatch_agent_plugin(query):
+            if any(
+                k in query
+                for k in ["mandate fail", "payment fail", "insufficient"]
+            ):
+              return (
+                  "⚠️ **Failed E-Mandate Resolution (Risk Agent)**: If an"
+                  " installment fails due to insufficient bank balance, a"
+                  " **5-day grace period** becomes active. You can immediately"
+                  " clear the missed installment manually using **UPI / Debit"
+                  " Card** from the **'My Portfolio'** tab to prevent tenure"
+                  " extension."
+              )
+            elif any(
+                k in query for k in ["what is e-mandate", "e-nach", "enach"]
+            ):
+              return (
+                  "🔄 **What is an E-Mandate? (Protocol Agent)**: An E-Mandate"
+                  " (AutoPay / E-NACH) is an automated authorization given to"
+                  " your bank to deduct your chosen SIP amount (Daily,"
+                  " Weekly, or Monthly) on schedule."
+              )
+            elif any(k in query for k in ["product", "offering", "tiers"]):
+              return (
+                  "📦 **Product Offerings (Allocation Agent)**: GullakCoin Pro"
+                  " offers 4 structured startup allocation tiers:\n1."
+                  " **GullakCoin Seed** (Target ₹ 5,000)\n2. **GullakCoin"
+                  " Growth** (Target ₹ 25,000)\n3. **GullakCoin Plus** (Target"
+                  " ₹ 50,000)\n4. **GullakCoin Superplus** (Target ₹"
+                  " 100,000)"
+              )
+            elif any(k in query for k in ["120", "lock", "hold"]):
+              return (
+                  "⏳ **120 Days Lock-in Rule (Milestone Agent)**: Our model"
+                  " consists of **90 days of SIP accumulation** followed by a"
+                  " **30 days holding lock-in** to maximize startup growth"
+                  " returns."
+              )
+            elif any(
+                k in query for k in ["withdraw", "payout", "redeem", "redemption"]
+            ):
+              return (
+                  "💸 **Withdrawal Process (Liquidity Agent)**: Once your"
+                  " target is 100% achieved, KYC is verified, and the 30-day"
+                  " lock-in passes, click **'Initiate Withdrawal Request'**"
+                  " under **'My Portfolio'**."
+              )
+            elif any(k in query for k in ["plan", "choose", "select"]):
+              return (
+                  "🎯 **Plan Selection (Execution Agent)**: Go to the **'Product"
+                  " offerings'** tab, pick your target tier, choose your"
+                  " frequency, and authorize AutoPay."
+              )
+            elif any(
+                k in query for k in ["emi", "deduct", "installment", "how many"]
+            ):
+              return (
+                  f"💳 **EMI & Deductions for {username} (Ledger Agent)**:"
+                  " Installments depend on frequency (Daily: 90, Weekly: 13,"
+                  " Monthly: 3). Check audit logs under **'Transaction"
+                  " History'**."
+              )
+            elif any(k in query for k in ["transaction", "history", "ledger"]):
+              return (
+                  "📝 **Transaction History (Audit Agent)**: Open the"
+                  " **'Transaction History'** tab to audit past successful"
+                  " investments and simulated failures."
+              )
+            elif any(k in query for k in ["portfolio", "balance", "value"]):
+              return (
+                  f"📊 **Portfolio Overview (Analytics Agent)**: Your active"
+                  f" portfolio value is **₹ {portfolio_value:,.2f}** out of target"
+                  f" **₹ {target_value:,.0f}**."
+              )
+            elif any(k in query for k in ["kyc", "pan", "bank"]):
+              return (
+                  f"🛡️ **KYC & Bank Status (Compliance Agent)**: Current"
+                  f" status is **{kyc_status}**. Ensure your bank registered"
+                  f" mobile number matches your login ID (`{username}`)."
+              )
+            elif any(
+                k in query for k in ["detector", "streak", "bonus", "predictor"]
+            ):
+              return (
+                  "🤖 **AI Yield Predictor (Gamification Agent)**: Maintaining"
+                  " 3+ consecutive successful AutoPay installments awards you"
+                  " the Gold Investor Badge and an extra **+1.0% AI Streak Yield"
+                  " Bonus**!"
+              )
+            else:
+              return (
+                  f"💡 **DeepSeek Harness Advisor Insight**: Regarding your"
+                  f" query about *'{user_prompt}'*, GullakCoin Pro's structured"
+                  " milestone model delivers superior net returns compared to"
+                  " standard bank FDs."
+              )
 
+          ai_response = dispatch_agent_plugin(q)
           st.markdown(ai_response)
           st.session_state.ai_messages.append(
               {"role": "assistant", "content": ai_response}
