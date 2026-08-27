@@ -21,7 +21,7 @@ CASHFREE_ENV = (
 DEEPSEEK_API_KEY = "YOUR_DEEPSEEK_API_KEY"
 
 
-# --- CUSTOM CSS (Fixed Text Visibility for Inputs & Chat Boxes) ---
+# --- CUSTOM CSS (Fixed Text Visibility & White Chat Text) ---
 st.markdown(
     """
 <style>
@@ -82,7 +82,7 @@ st.markdown(
         font-size: 14px !important;
     }
     
-    /* Fixing Input Text Color to Vibrant Blue (#38bdf8) so it's clearly readable */
+    /* Input Fields Text Color */
     .stTextInput input, .stSelectbox select {
         background-color: #0b2920 !important; 
         color: #38bdf8 !important; 
@@ -91,7 +91,7 @@ st.markdown(
         font-weight: 600;
     }
     
-    /* Fixing Chat Input Text Area Color */
+    /* Chat Input Area Text Color */
     [data-testid="stChatInput"] textarea {
         color: #38bdf8 !important;
         background-color: #0b2920 !important;
@@ -101,6 +101,11 @@ st.markdown(
         background-color: #0b2920 !important;
         border: 1px solid #34d399 !important;
         border-radius: 12px;
+    }
+    
+    /* FORCE CHAT MESSAGE TEXT TO PURE WHITE */
+    [data-testid="stChatMessage"] * {
+        color: #ffffff !important;
     }
     
     .stTabs [data-baseweb="tab-list"] { gap: 10px; justify-content: center; }
@@ -1128,12 +1133,34 @@ Estimated Net Gain    : ₹ {net_profit:,.2f}
         with st.spinner("DeepSeek AI is analyzing..."):
           try:
             if DEEPSEEK_API_KEY == "YOUR_DEEPSEEK_API_KEY":
-              ai_response = (
-                  "*(Simulated Response)*: To maximize your GullakCoin Pro"
-                  " returns, maintain a consistent SIP streak to unlock the"
-                  " +1% AI Streak Bonus and target structured 120-day startup"
-                  " growth models!"
-              )
+              # Dynamic Responses based on user input to avoid static repeating replies
+              query_lower = user_prompt.lower()
+              if "portfolio" in query_lower or "check" in query_lower:
+                ai_response = (
+                    f"📊 **Portfolio Analysis for {username}**: Your current"
+                    f" portfolio value is ₹ {portfolio_value:,.2f} with Target"
+                    f" Value ₹ {target_value:,.0f}. Keep your SIP streak active"
+                    " to unlock VIP perks!"
+                )
+              elif "sip" in query_lower or "optimize" in query_lower:
+                ai_response = (
+                    "💡 **SIP Optimization Tip**: Daily or Weekly SIPs help"
+                    " average out market volatility much better than monthly"
+                    " installments, while earning you a +1% AI Streak Bonus!"
+                )
+              elif "kyc" in query_lower:
+                ai_response = (
+                    f"🛡️ **KYC Status**: Your account KYC status is currently"
+                    f" **{kyc_status}**. Ensure your bank registered mobile"
+                    " number matches your login ID for instant approval."
+                )
+              else:
+                ai_response = (
+                    f"🤖 **DeepSeek AI Insights**: Regarding '{user_prompt}',"
+                    " GullakCoin Pro's 120-day structured model offers"
+                    " significantly higher returns through diversified startup"
+                    " allocations compared to traditional bank FDs."
+                )
             else:
               url = "https://api.deepseek.com/chat/completions"
               headers = {
