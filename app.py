@@ -459,7 +459,17 @@ if not st.session_state.logged_in:
     )
     st.write("")
 
-    if st.button("Request WhatsApp OTP", use_container_width=True, type="primary"):
+    col_btn1, col_btn2 = st.columns(2)
+    with col_btn1:
+      req_wa = st.button(
+          "Request WhatsApp OTP", use_container_width=True, type="primary"
+      )
+    with col_btn2:
+      req_sms = st.button(
+          "Request Text (SMS) OTP", use_container_width=True, type="secondary"
+      )
+
+    if req_wa or req_sms:
       conn = sqlite3.connect("gullakcoin_advanced.db")
       c = conn.cursor()
       c.execute(
@@ -478,16 +488,17 @@ if not st.session_state.logged_in:
         otp = str(random.randint(100000, 999999))
         st.session_state.otp_generated = otp
         st.session_state.auth_stage = "login_otp"
-        st.session_state.whatsapp_otp_sent = True
-        st.success("✅ OTP Generated Successfully!")
+        st.session_state.whatsapp_otp_sent = req_wa
+        if req_wa:
+          st.success("✅ WhatsApp OTP Generated Successfully!")
+        else:
+          st.success(
+              f"✅ Text (SMS) OTP Generated Successfully! Code: **{otp}**"
+          )
       else:
         st.error("Please enter your registered mobile number or email.")
 
-    if (
-        st.session_state.auth_stage == "login_otp"
-        and st.session_state.whatsapp_otp_sent
-    ):
-      # Target user ka apna registered mobile number use karega agar available ho, warna default owner number
+    if st.session_state.auth_stage == "login_otp":
       target_phone = (
           l_user.strip()
           if l_user
@@ -495,23 +506,34 @@ if not st.session_state.logged_in:
           and len(l_user) >= 10
           else MY_WHATSAPP_NUMBER
       )
-      wa_msg = (
-          "Hello, please send my GullakCoin Pro Login OTP. Verification Code:"
-          f" {st.session_state.otp_generated}"
-      )
-      wa_link = f"https://wa.me/{target_phone}?text={urllib.parse.quote(wa_msg)}"
 
-      st.markdown(
-          f"""
-            <div style="background-color: rgba(37, 211, 102, 0.15); border: 1px solid #25D366; padding: 15px; border-radius: 10px; text-align: center; margin-bottom: 15px;">
-                <p style="color: #ffffff; font-weight: 700; margin-bottom: 8px;">📲 Click below to receive your OTP instantly on WhatsApp:</p>
-                <a href="{wa_link}" target="_blank" style="background-color: #25D366; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block;">💬 Send OTP via WhatsApp</a>
-            </div>
-            """,
-          unsafe_allow_html=True,
-      )
+      if st.session_state.whatsapp_otp_sent:
+        wa_msg = (
+            "Hello, please send my GullakCoin Pro Login OTP. Verification Code:"
+            f" {st.session_state.otp_generated}"
+        )
+        wa_link = (
+            f"https://wa.me/{target_phone}?text={urllib.parse.quote(wa_msg)}"
+        )
 
-      l_otp_input = st.text_input("Enter 6-Digit WhatsApp OTP", key="l_otp")
+        st.markdown(
+            f"""
+                <div style="background-color: rgba(37, 211, 102, 0.15); border: 1px solid #25D366; padding: 15px; border-radius: 10px; text-align: center; margin-bottom: 15px;">
+                    <p style="color: #ffffff; font-weight: 700; margin-bottom: 8px;">📲 Click below to receive your OTP instantly on WhatsApp:</p>
+                    <a href="{wa_link}" target="_blank" style="background-color: #25D366; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block;">💬 Send OTP via WhatsApp</a>
+                </div>
+                """,
+            unsafe_allow_html=True,
+        )
+      else:
+        st.info(
+            f"📩 Text OTP sent to registered number. (Simulated Code:"
+            f" **{st.session_state.otp_generated}**)"
+        )
+
+      l_otp_input = st.text_input(
+          "Enter 6-Digit Verification Code (WhatsApp or Text)", key="l_otp"
+      )
       if st.button(
           "Verify & Access Dashboard", type="primary", use_container_width=True
       ):
