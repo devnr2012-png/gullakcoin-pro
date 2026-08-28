@@ -10,9 +10,9 @@ import streamlit as st
 # --- PAGE SETUP ---
 st.set_page_config(page_title="GullakCoin Pro", page_icon="🪙", layout="wide")
 
-# --- CASHFREE & TELEGRAM CONFIGURATION ---
-CASHFREE_APP_ID = "YOUR_CASHFREE_APP_ID"
-CASHFREE_SECRET_KEY = "YOUR_CASHFREE_SECRET_KEY"
+# --- MOCK PAYMENT GATEWAY CONFIGURATION (TEST MODE) ---
+CASHFREE_APP_ID = "TEST_APP_ID_MOCK"
+CASHFREE_SECRET_KEY = "TEST_SECRET_KEY_MOCK"
 CASHFREE_ENV = "TEST"
 TELEGRAM_BOT_TOKEN = "YOUR_TELEGRAM_BOT_TOKEN"
 TELEGRAM_CHAT_ID = "YOUR_TELEGRAM_CHAT_ID"
@@ -113,21 +113,6 @@ st.markdown(
         color: #ffffff !important;
     }
     
-    /* Permanent Fix: Expander selected white bar replaced with Sleek Dark Grey */
-    [data-testid="stExpander"] {
-        background-color: #0b2920 !important;
-        border: 1px solid #059669 !important;
-        border-radius: 10px !important;
-    }
-    [data-testid="stExpander"] summary {
-        background-color: #112d23 !important;
-        border-radius: 8px !important;
-        color: #ffffff !important;
-    }
-    [data-testid="stExpander"] summary:hover {
-        background-color: #16382c !important;
-    }
-    
     /* Permanent Fix: Hide empty containers */
     .element-container:empty, div[data-testid="stVerticalBlock"] > div:empty {
         display: none !important;
@@ -215,6 +200,15 @@ st.markdown(
     .calc-card {
         background-color: rgba(5, 150, 105, 0.12); padding: 20px; border-radius: 14px; border: 1px solid #34d399;
         margin-top: 15px; margin-bottom: 15px;
+    }
+    .gateway-popup {
+        background: rgba(11, 41, 32, 0.98);
+        border: 2px solid #38bdf8;
+        padding: 25px;
+        border-radius: 16px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.8);
+        margin-top: 20px;
+        margin-bottom: 20px;
     }
     .plan-title { font-size: 22px; font-weight: 800; margin-bottom: 10px; color: #ffffff;}
     .plan-desc { font-size: 13px; color: #cbd5e1; margin-bottom: 15px; line-height: 1.6; }
@@ -647,6 +641,8 @@ if "current_user" not in st.session_state:
   st.session_state.current_user = ""
 if "forgot_user" not in st.session_state:
   st.session_state.forgot_user = ""
+if "gateway_plan" not in st.session_state:
+  st.session_state.gateway_plan = None
 
 # --- AUTHENTICATION SCREEN (SPLIT LAYOUT: LEFT HERO, RIGHT AUTH) ---
 if not st.session_state.logged_in:
@@ -908,6 +904,7 @@ else:
   if st.sidebar.button("🚪 Logout", type="primary", use_container_width=True):
     st.session_state.logged_in = False
     st.session_state.current_user = ""
+    st.session_state.gateway_plan = None
     st.rerun()
 
   # HEADER METRICS
@@ -968,8 +965,7 @@ else:
     st.markdown(
         "<p style='color: #cbd5e1; font-size: 16px; margin-bottom: 10px;'>Select"
         " an available plan below. Review its detailed EMI calculation, ROI,"
-        " and maturity projection before authorizing your E-Mandate. (Note: Active"
-        " plans cannot be re-subscribed).</p>",
+        " and maturity projection before launching the E-Mandate Gateway.</p>",
         unsafe_allow_html=True,
     )
 
@@ -1006,6 +1002,50 @@ else:
             "superplus",
         ),
     ]
+
+    # Check if a payment gateway checkout is currently active
+    if st.session_state.gateway_plan is not None:
+      gp = st.session_state.gateway_plan
+      st.markdown(
+          f"""
+            <div class="gateway-popup">
+                <h3 style="color: #38bdf8; margin-top: 0;">🏦 Secure E-Mandate Payment Gateway (Cashfree / Razorpay Test Node)</h3>
+                <p style="color: #ffffff; font-size: 15px;"><b>Plan Selected:</b> {gp['title']}</p>
+                <p style="color: #cbd5e1; font-size: 14px;"><b>Frequency:</b> {gp['freq']} | <b>Installment Amount:</b> <span style="color: #34d399; font-weight: bold;">₹ {gp['inst_amt']:,.2f}</span></p>
+                <p style="color: #cbd5e1; font-size: 13px;">Authorize automated recurring e-mandate via your linked bank account (UPI / NetBanking / Debit Card).</p>
+            </div>
+            """,
+          unsafe_allow_html=True,
+      )
+
+      col_gw1, col_gw2 = st.columns(2)
+      with col_gw1:
+        if st.button(
+            "✅ Confirm & Authenticate E-Mandate",
+            type="primary",
+            use_container_width=True,
+        ):
+          with st.spinner(
+              "🔒 Securely registering E-Nach / AutoPay mandate with banking"
+              " network..."
+          ):
+            time.sleep(2)
+            add_subscription(
+                username, gp["title"], gp["target"], gp["freq"], gp["inst_amt"]
+            )
+          st.success(
+              f"🎉 E-Mandate successfully authorized and activated for"
+              f" **{gp['title']}**!"
+          )
+          st.session_state.gateway_plan = None
+          time.sleep(2)
+          st.rerun()
+      with col_gw2:
+        if st.button("❌ Cancel Gateway", use_container_width=True):
+          st.session_state.gateway_plan = None
+          st.rerun()
+
+      st.markdown("---")
 
     for title, target_amt, desc, key_id in plans_def:
       is_already_active = title in active_plan_names
@@ -1063,22 +1103,17 @@ else:
           )
 
           if st.button(
-              f"🚀 Authorize E-Mandate & Start {title}",
-              key=f"auth_btn_{key_id}",
+              f"💳 Proceed to Payment Gateway for {title}",
+              key=f"gw_btn_{key_id}",
               type="primary",
           ):
-            try:
-              add_subscription(
-                  username, title, target_amt, sel_freq, float(inst_amt)
-              )
-              st.success(
-                  f"✅ E-Mandate successfully authorized for **{title}** via"
-                  f" {sel_freq}!"
-              )
-              time.sleep(2)
-              st.rerun()
-            except Exception as e:
-              st.error(f"Error authorizing E-Mandate: {e}")
+            st.session_state.gateway_plan = {
+                "title": title,
+                "target": target_amt,
+                "freq": sel_freq,
+                "inst_amt": float(inst_amt),
+            }
+            st.rerun()
 
   elif menu == "📊 My Portfolio":
     st.subheader("Active Multi-Plan Portfolios & Account Summary")
@@ -1427,13 +1462,12 @@ else:
       )
 
     with st.expander(
-        "Q2: How does the live calculation matrix work before E-Mandate?"
+        "Q2: How does the payment gateway popup work for E-Mandates?"
     ):
       st.write(
-          "A: When you expand any plan under **'Product offerings'**, you can"
-          " choose your frequency (Daily, Weekly, Monthly) to instantly view"
-          " exact installment amounts, ROI, processing fees, GST, net profit,"
-          " and maturity dates before authorizing."
+          "A: When you click **'Proceed to Payment Gateway'** under any plan,"
+          " a secure mock banking popup simulates E-NACH/AutoPay authorization"
+          " before adding the plan to your active portfolio."
       )
 
     with st.expander("Q3: How do I access my Statement of Account?"):
