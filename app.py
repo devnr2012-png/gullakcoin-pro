@@ -201,7 +201,7 @@ st.markdown(
         background-color: rgba(5, 150, 105, 0.12); padding: 20px; border-radius: 14px; border: 1px solid #34d399;
         margin-top: 15px; margin-bottom: 15px;
     }
-    .gateway-popup {
+    .gateway-inline-box {
         background: rgba(11, 41, 32, 0.98);
         border: 2px solid #38bdf8;
         padding: 25px;
@@ -641,8 +641,8 @@ if "current_user" not in st.session_state:
   st.session_state.current_user = ""
 if "forgot_user" not in st.session_state:
   st.session_state.forgot_user = ""
-if "gateway_plan" not in st.session_state:
-  st.session_state.gateway_plan = None
+if "checkout_active_plan" not in st.session_state:
+  st.session_state.checkout_active_plan = None
 
 # --- AUTHENTICATION SCREEN (SPLIT LAYOUT: LEFT HERO, RIGHT AUTH) ---
 if not st.session_state.logged_in:
@@ -904,7 +904,7 @@ else:
   if st.sidebar.button("🚪 Logout", type="primary", use_container_width=True):
     st.session_state.logged_in = False
     st.session_state.current_user = ""
-    st.session_state.gateway_plan = None
+    st.session_state.checkout_active_plan = None
     st.rerun()
 
   # HEADER METRICS
@@ -965,7 +965,8 @@ else:
     st.markdown(
         "<p style='color: #cbd5e1; font-size: 16px; margin-bottom: 10px;'>Select"
         " an available plan below. Review its detailed EMI calculation, ROI,"
-        " and maturity projection before launching the E-Mandate Gateway.</p>",
+        " and maturity projection before initiating the secure E-Mandate"
+        " gateway.</p>",
         unsafe_allow_html=True,
     )
 
@@ -1003,23 +1004,23 @@ else:
         ),
     ]
 
-    # Check if a payment gateway checkout is currently active
-    if st.session_state.gateway_plan is not None:
-      gp = st.session_state.gateway_plan
+    # If checkout is active for a specific plan, show inline gateway box
+    if st.session_state.checkout_active_plan is not None:
+      cap = st.session_state.checkout_active_plan
       st.markdown(
           f"""
-            <div class="gateway-popup">
-                <h3 style="color: #38bdf8; margin-top: 0;">🏦 Secure E-Mandate Payment Gateway (Cashfree / Razorpay Test Node)</h3>
-                <p style="color: #ffffff; font-size: 15px;"><b>Plan Selected:</b> {gp['title']}</p>
-                <p style="color: #cbd5e1; font-size: 14px;"><b>Frequency:</b> {gp['freq']} | <b>Installment Amount:</b> <span style="color: #34d399; font-weight: bold;">₹ {gp['inst_amt']:,.2f}</span></p>
+            <div class="gateway-inline-box">
+                <h3 style="color: #38bdf8; margin-top: 0;">🏦 Secure E-Mandate Payment Gateway (Cashfree Test Node)</h3>
+                <p style="color: #ffffff; font-size: 16px;"><b>Selected Plan:</b> {cap['title']}</p>
+                <p style="color: #cbd5e1; font-size: 14px;"><b>Frequency:</b> {cap['freq']} | <b>Installment Amount:</b> <span style="color: #34d399; font-weight: bold;">₹ {cap['inst_amt']:,.2f}</span></p>
                 <p style="color: #cbd5e1; font-size: 13px;">Authorize automated recurring e-mandate via your linked bank account (UPI / NetBanking / Debit Card).</p>
             </div>
             """,
           unsafe_allow_html=True,
       )
 
-      col_gw1, col_gw2 = st.columns(2)
-      with col_gw1:
+      gw_col1, gw_col2 = st.columns(2)
+      with gw_col1:
         if st.button(
             "✅ Confirm & Authenticate E-Mandate",
             type="primary",
@@ -1029,20 +1030,28 @@ else:
               "🔒 Securely registering E-Nach / AutoPay mandate with banking"
               " network..."
           ):
-            time.sleep(2)
+            time.sleep(1.5)
             add_subscription(
-                username, gp["title"], gp["target"], gp["freq"], gp["inst_amt"]
+                username,
+                cap["title"],
+                cap["target"],
+                cap["freq"],
+                cap["inst_amt"],
             )
           st.success(
               f"🎉 E-Mandate successfully authorized and activated for"
-              f" **{gp['title']}**!"
+              f" **{cap['title']}**!"
           )
-          st.session_state.gateway_plan = None
+          st.session_state.checkout_active_plan = None
           time.sleep(2)
           st.rerun()
-      with col_gw2:
-        if st.button("❌ Cancel Gateway", use_container_width=True):
-          st.session_state.gateway_plan = None
+      with gw_col2:
+        if st.button(
+            "❌ Cancel & Return to Plans",
+            use_container_width=True,
+            type="secondary",
+        ):
+          st.session_state.checkout_active_plan = None
           st.rerun()
 
       st.markdown("---")
@@ -1107,7 +1116,7 @@ else:
               key=f"gw_btn_{key_id}",
               type="primary",
           ):
-            st.session_state.gateway_plan = {
+            st.session_state.checkout_active_plan = {
                 "title": title,
                 "target": target_amt,
                 "freq": sel_freq,
@@ -1461,13 +1470,11 @@ else:
           " other available tiers."
       )
 
-    with st.expander(
-        "Q2: How does the payment gateway popup work for E-Mandates?"
-    ):
+    with st.expander("Q2: How does the inline payment gateway work?"):
       st.write(
           "A: When you click **'Proceed to Payment Gateway'** under any plan,"
-          " a secure mock banking popup simulates E-NACH/AutoPay authorization"
-          " before adding the plan to your active portfolio."
+          " a secure inline payment gateway box opens up right on the page"
+          " where you can confirm and authenticate your E-Mandate instantly."
       )
 
     with st.expander("Q3: How do I access my Statement of Account?"):
