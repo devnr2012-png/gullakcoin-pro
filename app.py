@@ -949,6 +949,56 @@ else:
         st.markdown(f"- {action}")
 
   elif menu == "📦 Product offerings":
+    # Global check if gateway checkout is active across product offerings
+    if st.session_state.checkout_active_plan is not None:
+      cap = st.session_state.checkout_active_plan
+      st.markdown(
+          f"""
+            <div class="gateway-inline-box">
+                <h3 style="color: #38bdf8; margin-top: 0;">🏦 Secure E-Mandate Payment Gateway (Cashfree Test Node)</h3>
+                <p style="color: #ffffff; font-size: 16px;"><b>Selected Plan:</b> {cap['title']}</p>
+                <p style="color: #cbd5e1; font-size: 14px;"><b>Frequency:</b> {cap['freq']} | <b>Installment Amount:</b> <span style="color: #34d399; font-weight: bold;">₹ {cap['inst_amt']:,.2f}</span></p>
+                <p style="color: #cbd5e1; font-size: 13px;">Authorize automated recurring e-mandate via your linked bank account (UPI / NetBanking / Debit Card).</p>
+            </div>
+            """,
+          unsafe_allow_html=True,
+      )
+
+      gw_col1, gw_col2 = st.columns(2)
+      with gw_col1:
+        if st.button(
+            "✅ Confirm & Authenticate E-Mandate",
+            type="primary",
+            use_container_width=True,
+        ):
+          with st.spinner(
+              "🔒 Securely registering E-Nach / AutoPay mandate with banking"
+              " network..."
+          ):
+            time.sleep(1.5)
+            add_subscription(
+                username,
+                cap["title"],
+                cap["target"],
+                cap["freq"],
+                cap["inst_amt"],
+            )
+          st.success(
+              f"🎉 E-Mandate successfully authorized and activated for"
+              f" **{cap['title']}**!"
+          )
+          st.session_state.checkout_active_plan = None
+          st.session_state.selected_plan = None
+          time.sleep(2)
+          st.rerun()
+      with gw_col2:
+        if st.button(
+            "❌ Cancel Gateway", use_container_width=True, type="secondary"
+        ):
+          st.session_state.checkout_active_plan = None
+          st.rerun()
+      st.markdown("---")
+
     if st.session_state.selected_plan is None:
       st.markdown("## Auto-Invest in Promising Startups.")
       st.markdown(
@@ -1004,56 +1054,6 @@ else:
               "superplus",
           ),
       ]
-
-      # Inline Payment Gateway Checkout Box if triggered
-      if st.session_state.checkout_active_plan is not None:
-        cap = st.session_state.checkout_active_plan
-        st.markdown(
-            f"""
-                <div class="gateway-inline-box">
-                    <h3 style="color: #38bdf8; margin-top: 0;">🏦 Secure E-Mandate Payment Gateway (Cashfree Test Node)</h3>
-                    <p style="color: #ffffff; font-size: 16px;"><b>Selected Plan:</b> {cap['title']}</p>
-                    <p style="color: #cbd5e1; font-size: 14px;"><b>Frequency:</b> {cap['freq']} | <b>Installment Amount:</b> <span style="color: #34d399; font-weight: bold;">₹ {cap['inst_amt']:,.2f}</span></p>
-                    <p style="color: #cbd5e1; font-size: 13px;">Authorize automated recurring e-mandate via your linked bank account (UPI / NetBanking / Debit Card).</p>
-                </div>
-                """,
-            unsafe_allow_html=True,
-        )
-
-        gw_col1, gw_col2 = st.columns(2)
-        with gw_col1:
-          if st.button(
-              "✅ Confirm & Authenticate E-Mandate",
-              type="primary",
-              use_container_width=True,
-          ):
-            with st.spinner(
-                "🔒 Securely registering E-Nach / AutoPay mandate with banking"
-                " network..."
-            ):
-              time.sleep(1.5)
-              add_subscription(
-                  username,
-                  cap["title"],
-                  cap["target"],
-                  cap["freq"],
-                  cap["inst_amt"],
-              )
-            st.success(
-                f"🎉 E-Mandate successfully authorized and activated for"
-                f" **{cap['title']}**!"
-            )
-            st.session_state.checkout_active_plan = None
-            st.session_state.selected_plan = None
-            time.sleep(2)
-            st.rerun()
-        with gw_col2:
-          if st.button(
-              "❌ Cancel Gateway", use_container_width=True, type="secondary"
-          ):
-            st.session_state.checkout_active_plan = None
-            st.rerun()
-        st.markdown("---")
 
       cols = st.columns(4)
       for i, (title, target_amt, desc, plan_key) in enumerate(plans):
