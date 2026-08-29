@@ -1056,7 +1056,7 @@ else:
         st.markdown("---")
 
       cols = st.columns(4)
-      for i, (title, target_amt, desc, key_id) in enumerate(plans):
+      for i, (title, target_amt, desc, plan_key) in enumerate(plans):
         with cols[i]:
           st.markdown(
               f"""
@@ -1070,19 +1070,21 @@ else:
           )
           if st.button(
               f"Explore {title.split()[-1]}",
-              key=f"expl_{key_id}",
+              key=f"expl_{plan_key}",
               use_container_width=True,
           ):
             st.session_state.selected_plan = {
                 "title": title,
                 "target": target_amt,
                 "desc": desc,
+                "key": plan_key,
             }
             st.rerun()
     else:
       plan = st.session_state.selected_plan
       target_amt = plan["target"]
       title = plan["title"]
+      plan_key = plan["key"]
 
       if st.button("⬅️ Back to All Plans"):
         st.session_state.selected_plan = None
@@ -1138,7 +1140,7 @@ else:
           )
           if st.button(
               f"💳 Proceed to Payment for {f_name}",
-              key=f"gw_{f_name}_{key_id}",
+              key=f"gw_{f_name}_{plan_key}",
               type="primary",
               use_container_width=True,
           ):
@@ -1217,7 +1219,6 @@ else:
               key=f"w_btn_{p_name}",
               type="primary",
           ):
-            # Determine withdrawal status based on KYC and Lockin
             if not is_kyc_verified:
               w_status = "Pending"
             elif not is_lockin_passed:
