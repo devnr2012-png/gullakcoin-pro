@@ -197,9 +197,9 @@ st.markdown(
         background-color: #0b2920; padding: 25px; border-radius: 16px; border: 1px solid #047857;
         height: 230px; display: flex; flex-direction: column; justify-content: flex-start; margin-bottom: 12px;
     }
-    .calc-card {
-        background-color: rgba(5, 150, 105, 0.12); padding: 20px; border-radius: 14px; border: 1px solid #34d399;
-        margin-top: 15px; margin-bottom: 15px;
+    .detail-card {
+        background-color: #0b2920; padding: 22px; border-radius: 12px; border: 1px solid #34d399;
+        text-align: center; margin-top: 15px; margin-bottom: 15px;
     }
     .running-banner {
         background: linear-gradient(135deg, rgba(56, 189, 248, 0.15), rgba(5, 150, 105, 0.25));
@@ -580,8 +580,8 @@ if "current_user" not in st.session_state:
   st.session_state.current_user = ""
 if "forgot_user" not in st.session_state:
   st.session_state.forgot_user = ""
-if "checkout_active_plan" not in st.session_state:
-  st.session_state.checkout_active_plan = None
+if "selected_plan" not in st.session_state:
+  st.session_state.selected_plan = None
 
 # --- AUTHENTICATION SCREEN ---
 if not st.session_state.logged_in:
@@ -773,47 +773,36 @@ else:
   balance_target = max(total_target_value - portfolio_value, 0)
 
 
-  def calculate_detailed_metrics(target, freq):
+  def calculate_payout(target, freq):
     if "Daily" in freq:
       roi = 0.08
       installments_count = 90
-      inst_amt = target / 90
     elif "Weekly" in freq:
       roi = 0.10
       installments_count = 13
-      inst_amt = (target / 90) * 7
     else:
       roi = 0.18
       installments_count = 3
-      inst_amt = target / 3
 
     success_tx_count = (
         len(df_tx[df_tx["status"] == "Success"]) if not df_tx.empty else 0
     )
     streak_bonus = 0.01 if success_tx_count >= 3 else 0.0
-    effective_roi = roi + streak_bonus
 
+    effective_roi = roi + streak_bonus
     maturity = target + (target * effective_roi)
     fee = maturity * 0.02
     gst = fee * 0.18
     net_payout = maturity - fee - gst
     net_profit = net_payout - target
-
-    start_dt = datetime.datetime.now()
-    comp_dt = start_dt + datetime.timedelta(days=90)
-    w_dt = comp_dt + datetime.timedelta(days=30)
-
     return (
-        inst_amt,
-        installments_count,
-        effective_roi,
         maturity,
         fee,
         gst,
         net_payout,
         net_profit,
-        comp_dt,
-        w_dt,
+        streak_bonus,
+        installments_count,
     )
 
 
@@ -842,7 +831,7 @@ else:
   if st.sidebar.button("🚪 Logout", type="primary", use_container_width=True):
     st.session_state.logged_in = False
     st.session_state.current_user = ""
-    st.session_state.checkout_active_plan = None
+    st.session_state.selected_plan = None
     st.rerun()
 
   # HEADER METRICS
@@ -917,150 +906,171 @@ else:
         )
       st.markdown("</div>", unsafe_allow_html=True)
 
-    st.markdown("## Auto-Invest in Promising Startups.")
-    st.markdown(
-        "<p style='color: #cbd5e1; font-size: 16px; margin-bottom: 10px;'>Select"
-        " any plan below (you can run multiple plans simultaneously). Review"
-        " its detailed EMI calculation and authorize your E-Mandate.</p>",
-        unsafe_allow_html=True,
-    )
-
-    plans_def = [
-        (
-            "GullakCoin Seed",
-            5000,
-            (
-                "Best for early-stage startup exposure with balanced"
-                " micro-tickets."
-            ),
-            "seed",
-        ),
-        (
-            "GullakCoin Growth",
-            25000,
-            "For dynamically scaling an emerging startup portfolio.",
-            "growth",
-        ),
-        (
-            "GullakCoin Plus",
-            50000,
-            "Advanced access into mid-stage startup rounds.",
-            "plus",
-        ),
-        (
-            "GullakCoin Superplus",
-            100000,
-            "Exclusive curated high-net-worth venture allocations.",
-            "superplus",
-        ),
-    ]
-
-    # Inline Payment Gateway Checkout Box
-    if st.session_state.checkout_active_plan is not None:
-      cap = st.session_state.checkout_active_plan
+    if st.session_state.selected_plan is None:
+      st.markdown("## Auto-Invest in Promising Startups.")
       st.markdown(
-          f"""
-            <div class="gateway-inline-box">
-                <h3 style="color: #38bdf8; margin-top: 0;">🏦 Secure E-Mandate Payment Gateway (Cashfree Test Node)</h3>
-                <p style="color: #ffffff; font-size: 16px;"><b>Selected Plan:</b> {cap['title']}</p>
-                <p style="color: #cbd5e1; font-size: 14px;"><b>Frequency:</b> {cap['freq']} | <b>Installment Amount:</b> <span style="color: #34d399; font-weight: bold;">₹ {cap['inst_amt']:,.2f}</span></p>
-                <p style="color: #cbd5e1; font-size: 13px;">Authorize automated recurring e-mandate via your linked bank account (UPI / NetBanking / Debit Card).</p>
+          "<p style='color: #cbd5e1; font-size: 16px; margin-bottom: 5px;'>Select"
+          " a structured allocation plan below to view projections and E-Mandate"
+          " frequencies. You can run multiple plans simultaneously.</p>",
+          unsafe_allow_html=True,
+      )
+
+      st.markdown(
+          """
+            <div class="comparison-box">
+                <b>💡 Why choose GullakCoin Pro over traditional Bank FD / Savings Account?</b><br>
+                While a standard bank savings account or short-term FD yields a nominal 3% to 7% p.a., our 4-month structured milestone model (3 Months SIP + 1 Month Hold) targets significantly higher net growth through diversified startup allocations. Lock in your funds for 120 days to unlock superior returns compared to traditional banking.
             </div>
             """,
           unsafe_allow_html=True,
       )
 
-      gw_col1, gw_col2 = st.columns(2)
-      with gw_col1:
-        if st.button(
-            "✅ Confirm & Authenticate E-Mandate",
-            type="primary",
-            use_container_width=True,
-        ):
-          with st.spinner(
-              "🔒 Securely registering E-Nach / AutoPay mandate with banking"
-              " network..."
-          ):
-            time.sleep(1.5)
-            add_subscription(
-                username,
-                cap["title"],
-                cap["target"],
-                cap["freq"],
-                cap["inst_amt"],
-            )
-          st.success(
-              f"🎉 E-Mandate successfully authorized and activated for"
-              f" **{cap['title']}**!"
+      st.markdown(
+          "<p class='disclaimer'>*Disclaimer: All target yields are estimates"
+          " based on quantitative models and carry market risks.</p>",
+          unsafe_allow_html=True,
+      )
+      st.write("")
+
+      plans = [
+          (
+              "GullakCoin Seed",
+              5000,
+              (
+                  "Best for early-stage startup exposure with balanced"
+                  " micro-tickets."
+              ),
+              "seed",
+          ),
+          (
+              "GullakCoin Growth",
+              25000,
+              "For dynamically scaling an emerging startup portfolio.",
+              "growth",
+          ),
+          (
+              "GullakCoin Plus",
+              50000,
+              "Advanced access into mid-stage startup rounds.",
+              "plus",
+          ),
+          (
+              "GullakCoin Superplus",
+              100000,
+              "Exclusive curated high-net-worth venture allocations.",
+              "superplus",
+          ),
+      ]
+
+      cols = st.columns(4)
+      for i, (title, target_amt, desc, key_id) in enumerate(plans):
+        with cols[i]:
+          st.markdown(
+              f"""
+                    <div class="plan-card">
+                        <div class="plan-title">{title}</div>
+                        <div class="plan-desc">{desc}</div>
+                        <div class="plan-target">🎯 Target: ₹ {target_amt:,.0f}</div>
+                    </div>
+                    """,
+              unsafe_allow_html=True,
           )
-          st.session_state.checkout_active_plan = None
-          time.sleep(2)
-          st.rerun()
-      with gw_col2:
-        if st.button(
-            "❌ Cancel & Return to Plans",
-            use_container_width=True,
-            type="secondary",
-        ):
-          st.session_state.checkout_active_plan = None
-          st.rerun()
+          if st.button(
+              f"Explore {title.split()[-1]}",
+              key=f"expl_{key_id}",
+              use_container_width=True,
+          ):
+            st.session_state.selected_plan = {
+                "title": title,
+                "target": target_amt,
+                "desc": desc,
+            }
+            st.rerun()
+    else:
+      plan = st.session_state.selected_plan
+      target_amt = plan["target"]
+      title = plan["title"]
 
-      st.markdown("---")
+      if st.button("⬅️ Back to All Plans"):
+        st.session_state.selected_plan = None
+        st.rerun()
 
-    for title, target_amt, desc, key_id in plans_def:
-      with st.expander(f"📌 {title} | Target: ₹ {target_amt:,.0f} [🟢 Available]"):
-        st.write(desc)
-        sel_freq = st.selectbox(
-            f"Choose E-Mandate Frequency for {title}",
-            ["Daily SIP", "Weekly SIP", "Monthly SIP"],
-            key=f"freq_{key_id}",
-        )
+      st.markdown(
+          f"<h1>{title} <span style='color: #34d399;'>| Target: ₹"
+          f" {target_amt:,.0f}</span></h1>",
+          unsafe_allow_html=True,
+      )
+      st.write(plan["desc"])
 
+      st.markdown(
+          """
+            <div class="strict-rule-box">
+                <b>⚠️ Important Lock-in & E-Mandate Rule:</b><br>
+                Once you authorize AutoPay, installments deduct automatically. <b>You cannot withdraw</b> your funds until the full Target Principal and maturity cycle are 100% completed. In case of insufficient bank balance, a 5-day grace period applies before cycle timeline extension.
+            </div>
+            """,
+          unsafe_allow_html=True,
+      )
+
+      st.subheader("Configure AutoPay E-Mandate Frequency:")
+
+      freqs = [
+          ("Daily", target_amt / 90, 0.08),
+          ("Weekly", (target_amt / 90) * 7, 0.10),
+          ("Monthly", target_amt / 3, 0.18),
+      ]
+
+      f_cols = st.columns(3)
+      for i, (f_name, f_amt, f_roi) in enumerate(freqs):
         (
-            inst_amt,
-            inst_count,
-            eff_roi,
             maturity,
             fee,
             gst,
             net_payout,
             net_profit,
-            comp_dt,
-            w_dt,
-        ) = calculate_detailed_metrics(target_amt, sel_freq)
-
-        st.markdown(
-            f"""
-                <div class="calc-card">
-                    <h4 style="color: #34d399; margin-top:0;">📊 Detailed Financial & E-Mandate Breakdown for {title}</h4>
-                    <ul style="color: #f8fafc; font-size: 14px; line-height: 1.6; padding-left: 20px;">
-                        <li><b>Frequency & Installments:</b> {sel_freq} ({inst_count} Total Deductions)</li>
-                        <li><b>Installment Amount:</b> <span style="color: #38bdf8;">₹ {inst_amt:,.2f} per hit</span></li>
-                        <li><b>Target Yield (ROI):</b> {eff_roi*100:.1f}% p.a. equivalent</li>
-                        <li><b>Gross Maturity Value:</b> ₹ {maturity:,.2f}</li>
-                        <li><b>Platform Fee (2%) + GST (18%):</b> -₹ {fee+gst:,.2f}</li>
-                        <li><b>Estimated Net Payout:</b> <span style="color: #34d399; font-weight: bold;">₹ {net_payout:,.2f}</span></li>
-                        <li><b>Estimated Net Profit:</b> <span style="color: #38bdf8; font-weight: bold;">+₹ {net_profit:,.2f}</span></li>
-                        <li><b>Target Completion / Maturity Date:</b> {comp_dt.strftime('%d %B %Y')}</li>
-                        <li><b>Withdrawal Unlock Date:</b> {w_dt.strftime('%d %B %Y')} (After 30-day hold)</li>
-                    </ul>
-                </div>
-                """,
-            unsafe_allow_html=True,
-        )
-
-        if st.button(
-            f"💳 Proceed to Payment Gateway for {title}",
-            key=f"gw_btn_{key_id}",
-            type="primary",
-        ):
-          st.session_state.checkout_active_plan = {
-              "title": title,
-              "target": target_amt,
-              "freq": sel_freq,
-              "inst_amt": float(inst_amt),
-          }
-          st.rerun()
+            bonus,
+            total_installments,
+        ) = calculate_payout(target_amt, f_name)
+        with f_cols[i]:
+          bonus_text = (
+              f" (+{bonus*100:.1f}% AI Streak Bonus)" if bonus > 0 else ""
+          )
+          st.markdown(
+              f"""
+                    <div class="detail-card">
+                        <h3 style='margin-bottom:0;'>{f_name} SIP</h3>
+                        <p style='color: #cbd5e1;'>Deduction: <b>₹ {f_amt:,.2f}</b></p>
+                        <hr style='border-color: #047857;'>
+                        <p style='text-align: left; font-size: 13px; color: #f1f5f9;'>
+                            <b>Target Yield Est.:</b> {f_roi*100:.0f}%{bonus_text}<br>
+                            <b>Gross Maturity:</b> ₹ {maturity:,.2f}<br>
+                            <span style='color: #fbbf24;'><b>Tenure:</b> 3 Months</span><br>
+                            <span style='color: #fbbf24;'><b>Lock-in Period:</b> 1 Month</span><br>
+                            <b>Platform Fee + GST:</b> -₹ {fee+gst:,.2f}<br><br>
+                            <span style='color: #34d399; font-size: 15px;'><b>Est. Net Payout: ₹ {net_payout:,.2f}</b></span><br>
+                            <span style='color: #38bdf8; font-size: 14px;'><b>Total EMIs to Deduct: {total_installments} Installments</b></span>
+                        </p>
+                    </div>
+                    """,
+              unsafe_allow_html=True,
+          )
+          if st.button(
+              f"Authorize {f_name} AutoPay",
+              key=f"sub_{f_name}",
+              type="primary",
+              use_container_width=True,
+          ):
+            try:
+              add_subscription(username, title, target_amt, f_name, f_amt)
+              st.success(
+                  f"✅ E-Mandate registered successfully for {title} via"
+                  f" {f_name} SIP!"
+              )
+              st.session_state.selected_plan = None
+              time.sleep(2)
+              st.rerun()
+            except Exception as e:
+              st.error(f"Error: {e}")
 
   elif menu == "📊 My Portfolio":
     st.subheader("Active Multi-Plan Portfolios & Account Summary")
