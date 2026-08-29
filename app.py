@@ -1144,34 +1144,12 @@ else:
       st.subheader("Configure AutoPay E-Mandate Frequency:")
       f_cols = st.columns(3)
       for i, (f_name, f_amt, f_roi) in enumerate(freqs):
-        (
-            maturity,
-            fee,
-            gst,
-            net_payout,
-            net_profit,
-            bonus,
-            total_installments,
-        ) = calculate_payout(target_amt, f_name)
         with f_cols[i]:
-          bonus_text = (
-              f" (+{bonus*100:.1f}% AI Streak Bonus)" if bonus > 0 else ""
-          )
           st.markdown(
               f"""
                     <div class="detail-card">
                         <h3 style='margin-bottom:0;'>{f_name} SIP</h3>
                         <p style='color: #cbd5e1;'>Deduction: <b>₹ {f_amt:,.2f}</b></p>
-                        <hr style='border-color: #047857;'>
-                        <p style='text-align: left; font-size: 13px; color: #f1f5f9;'>
-                            <b>Target Yield Est.:</b> {f_roi*100:.0f}%{bonus_text}<br>
-                            <b>Gross Maturity:</b> ₹ {maturity:,.2f}<br>
-                            <span style='color: #fbbf24;'><b>Tenure:</b> 3 Months</span><br>
-                            <span style='color: #fbbf24;'><b>Lock-in Period:</b> 1 Month</span><br>
-                            <b>Platform Fee + GST:</b> -₹ {fee+gst:,.2f}<br><br>
-                            <span style='color: #34d399; font-size: 15px;'><b>Est. Net Payout: ₹ {net_payout:,.2f}</b></span><br>
-                            <span style='color: #38bdf8; font-size: 14px;'><b>Total EMIs to Deduct: {total_installments} Installments</b></span>
-                        </p>
                     </div>
                     """,
               unsafe_allow_html=True,
@@ -1238,9 +1216,7 @@ else:
           st.success(
               f"✅ Target 100% Achieved for {p_name}! Maturity Option Unlocked."
           )
-          maturity, fee, gst, net_payout, net_profit, _, _ = calculate_payout(
-              p_target, p_freq
-          )
+          _, _, _, net_payout, _, _, _ = calculate_payout(p_target, p_freq)
 
           st.write(
               f"📅 **Target Completion Date:**"
