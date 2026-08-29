@@ -596,8 +596,8 @@ if "forgot_user" not in st.session_state:
   st.session_state.forgot_user = ""
 if "selected_plan" not in st.session_state:
   st.session_state.selected_plan = None
-if "checkout_active_plan" not in st.session_state:
-  st.session_state.checkout_active_plan = None
+if "pending_checkout" not in st.session_state:
+  st.session_state.pending_checkout = None
 
 # --- AUTHENTICATION SCREEN ---
 if not st.session_state.logged_in:
@@ -788,7 +788,6 @@ else:
   )
   balance_target = max(total_target_value - portfolio_value, 0)
 
-  # Calculate accurately running/active subscriptions count (where target is not yet fully completed)
   active_sub_count = 0
   if not df_sub.empty:
     for _, s_row in df_sub.iterrows():
@@ -810,34 +809,22 @@ else:
   def calculate_payout(target, freq):
     if "Daily" in freq:
       roi = 0.08
-      installments_count = 90
     elif "Weekly" in freq:
       roi = 0.10
-      installments_count = 13
     else:
       roi = 0.18
-      installments_count = 3
 
     success_tx_count = (
         len(df_tx[df_tx["status"] == "Success"]) if not df_tx.empty else 0
     )
     streak_bonus = 0.01 if success_tx_count >= 3 else 0.0
-
     effective_roi = roi + streak_bonus
     maturity = target + (target * effective_roi)
     fee = maturity * 0.02
     gst = fee * 0.18
     net_payout = maturity - fee - gst
     net_profit = net_payout - target
-    return (
-        maturity,
-        fee,
-        gst,
-        net_payout,
-        net_profit,
-        streak_bonus,
-        installments_count,
-    )
+    return maturity, fee, gst, net_payout, net_profit, streak_bonus
 
 
   def calculate_detailed_metrics(target, freq):
@@ -910,7 +897,7 @@ else:
     st.session_state.logged_in = False
     st.session_state.current_user = ""
     st.session_state.selected_plan = None
-    st.session_state.checkout_active_plan = None
+    st.session_state.pending_checkout = None
     st.rerun()
 
   # HEADER METRICS
@@ -967,6 +954,55 @@ else:
         st.markdown(f"- {action}")
 
   elif menu == "📦 Product offerings":
+    if st.session_state.pending_checkout is not None:
+      pc = st.session_state.pending_checkout
+      st.markdown(
+          f"""
+            <div class="gateway-inline-box">
+                <h3 style="color: #38bdf8; margin-top: 0;">🏦 Secure E-Mandate Payment Gateway (Cashfree Test Node)</h3>
+                <p style="color: #ffffff; font-size: 16px;"><b>Selected Plan:</b> {pc['title']}</p>
+                <p style="color: #cbd5e1; font-size: 14px;"><b>Frequency:</b> {pc['freq']} | <b>Installment Amount:</b> <span style="color: #34d399; font-weight: bold;">₹ {pc['inst_amt']:,.2f}</span></p>
+                <p style="color: #cbd5e1; font-size: 13px;">Authorize automated recurring e-mandate via your linked bank account (UPI / NetBanking / Debit Card).</p>
+            </div>
+            """,
+          unsafe_allow_html=True,
+      )
+
+      gw_col1, gw_col2 = st.columns(2)
+      with gw_col1:
+        if st.button(
+            "✅ Confirm & Authenticate E-Mandate",
+            type="primary",
+            use_container_width=True,
+            key="confirm_mandate_btn",
+        ):
+          with st.spinner(
+              "🔒 Securely registering E-Nach / AutoPay mandate with banking"
+              " network..."
+          ):
+            time.sleep(1.5)
+            add_subscription(
+                username, pc["title"], pc["target"], pc["freq"], pc["inst_amt"]
+            )
+          st.success(
+              f"🎉 E-Mandate successfully authorized and activated for"
+              f" **{pc['title']}**!"
+          )
+          st.session_state.pending_checkout = None
+          st.session_state.selected_plan = None
+          time.sleep(2)
+          st.rerun()
+      with gw_col2:
+        if st.button(
+            "❌ Cancel Gateway",
+            use_container_width=True,
+            type="secondary",
+            key="cancel_mandate_btn",
+        ):
+          st.session_state.pending_checkout = None
+          st.rerun()
+      st.markdown("---")
+
     if st.session_state.selected_plan is None:
       st.markdown("## Auto-Invest in Promising Startups.")
       st.markdown(
@@ -1024,57 +1060,6 @@ else:
           ),
       ]
 
-      # Inline Payment Gateway Checkout Box if triggered
-      if st.session_state.checkout_active_plan is not None:
-        cap = st.session_state.checkout_active_plan
-        st.markdown(
-            f"""
-                <div class="gateway-inline-box">
-                    <h3 style="color: #38bdf8; margin-top: 0;">🏦 Secure E-Mandate Payment Gateway (Cashfree Test Node)</h3>
-                    <p style="color: #ffffff; font-size: 16px;"><b>Selected Plan:</b> {cap['title']}</p>
-                    <p style="color: #cbd5e1; font-size: 14px;"><b>Frequency:</b> {cap['freq']} | <b>Installment Amount:</b> <span style="color: #34d399; font-weight: bold;">₹ {cap['inst_amt']:,.2f}</span></p>
-                    <p style="color: #cbd5e1; font-size: 13px;">Authorize automated recurring e-mandate via your linked bank account (UPI / NetBanking / Debit Card).</p>
-                </div>
-                """,
-            unsafe_allow_html=True,
-        )
-
-        gw_col1, gw_col2 = st.columns(2)
-        with gw_col1:
-          if st.button(
-              "✅ Confirm & Authenticate E-Mandate",
-              type="primary",
-              use_container_width=True,
-          ):
-            with st.spinner(
-                "🔒 Securely registering E-Nach / AutoPay mandate with banking"
-                " network..."
-            ):
-              time.sleep(1.5)
-              add_subscription(
-                  username,
-                  cap["title"],
-                  cap["target"],
-                  cap["freq"],
-                  cap["inst_amt"],
-              )
-            st.success(
-                f"🎉 E-Mandate successfully authorized and activated for"
-                f" **{cap['title']}**!"
-            )
-            st.session_state.checkout_active_plan = None
-            st.session_state.selected_plan = None
-            time.sleep(2)
-            st.rerun()
-        with gw_col2:
-          if st.button(
-              "❌ Cancel Gateway", use_container_width=True, type="secondary"
-          ):
-            st.session_state.checkout_active_plan = None
-            st.rerun()
-        st.markdown("---")
-
-      # Check which plans are currently active and not yet completed
       active_plan_status = {}
       if not df_sub.empty:
         for _, sub_r in df_sub.iterrows():
@@ -1139,7 +1124,7 @@ else:
       title = plan["title"]
       plan_key = plan["key"]
 
-      if st.button("⬅️ Back to All Plans"):
+      if st.button("⬅️ Back to All Plans", key="back_to_plans_btn"):
         st.session_state.selected_plan = None
         st.rerun()
 
@@ -1193,11 +1178,11 @@ else:
           )
           if st.button(
               f"💳 Proceed to Payment for {f_name}",
-              key=f"gw_{f_name}_{plan_key}",
+              key=f"pay_btn_{f_name}_{plan_key}",
               type="primary",
               use_container_width=True,
           ):
-            st.session_state.checkout_active_plan = {
+            st.session_state.pending_checkout = {
                 "title": title,
                 "target": target_amt,
                 "freq": f"{f_name} SIP",
@@ -1332,6 +1317,7 @@ else:
       with st.expander("🛠️ Developer Sandbox: Simulate E-Mandate Failure"):
         if st.button(
             "Simulate Insufficient Balance (Fail Next Installment)",
+            key="sim_fail_btn",
             type="secondary",
         ):
           sample_plan = df_sub.iloc[0]["plan_name"]
@@ -1573,14 +1559,16 @@ else:
 
   elif menu == "❓ FAQs":
     st.subheader("❓ Frequently Asked Questions")
-    with st.expander("Q: Can I re-subscribe to a running plan?"):
+    with st.expander("Q: How does withdrawal status work?"):
       st.write(
-          "A: No, once an E-Mandate is active and running for a specific plan,"
-          " you cannot re-subscribe to it until all its installments are"
-          " completed. However, you can subscribe to other available plans."
+          "A: When you initiate a withdrawal after your target is completed,"
+          " the status is recorded as **Pending** (if KYC is unverified), **In"
+          " Process** (if KYC is verified but the 1-month lock-in period is"
+          " active), or **Completed** (once all conditions are fully"
+          " satisfied)."
       )
-    with st.expander("Q: Can I run multiple plans simultaneously?"):
+    with st.expander("Q: Can I run multiple investment plans simultaneously?"):
       st.write(
-          "A: Yes! You can invest in different plans simultaneously and track"
-          " them all from your portfolio."
+          "A: Yes! You can subscribe to and run multiple startup allocation"
+          " plans simultaneously."
       )
