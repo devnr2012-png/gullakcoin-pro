@@ -1156,13 +1156,11 @@ else:
     if not df_sub.empty:
       GamificationPlugin.render_widget(df_tx)
 
-      # Plan-wise breakdown & maturity check
       for _, row in df_sub.iterrows():
         p_name = row["plan_name"]
         p_target = row["target_amount"]
         p_freq = row["frequency"]
 
-        # Calculate portfolio value contributed by this specific plan
         plan_contrib = (
             df_tx[
                 (df_tx["plan_ref"] == p_name)
@@ -1221,9 +1219,9 @@ else:
           ):
             # Determine withdrawal status based on KYC and Lockin
             if not is_kyc_verified:
-              w_status = "Pending (KYC Unverified)"
+              w_status = "Pending"
             elif not is_lockin_passed:
-              w_status = "In Process (Lock-in Active)"
+              w_status = "In Process"
             else:
               w_status = "Completed"
 
@@ -1231,13 +1229,12 @@ else:
 
             if not is_kyc_verified:
               st.error(
-                  "🚨 Withdrawal Request Submitted, but status is **Pending**"
-                  " because your KYC/Bank details verification is pending or"
-                  " mobile mismatch."
+                  "🚨 Withdrawal Request Submitted. Status is **Pending** because"
+                  " your KYC/Bank details verification is pending."
               )
             elif not is_lockin_passed:
               st.warning(
-                  "⏳ Withdrawal Request Submitted! Status is **In Process**"
+                  "⏳ Withdrawal Request Submitted. Status is **In Process**"
                   " because the 1-month holding lock-in period is active."
               )
             else:
