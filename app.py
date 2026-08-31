@@ -197,9 +197,9 @@ st.markdown(
         background-color: #0b2920; padding: 25px; border-radius: 16px; border: 1px solid #047857;
         height: 230px; display: flex; flex-direction: column; justify-content: flex-start; margin-bottom: 12px;
     }
-    .calc-card {
-        background-color: rgba(5, 150, 105, 0.12); padding: 20px; border-radius: 14px; border: 1px solid #34d399;
-        margin-top: 15px; margin-bottom: 15px;
+    .detail-card {
+        background-color: #0b2920; padding: 22px; border-radius: 12px; border: 1px solid #34d399;
+        text-align: center; margin-top: 15px; margin-bottom: 15px;
     }
     .gateway-inline-box {
         background: rgba(11, 41, 32, 0.98);
@@ -809,22 +809,34 @@ else:
   def calculate_payout(target, freq):
     if "Daily" in freq:
       roi = 0.08
+      installments_count = 90
     elif "Weekly" in freq:
       roi = 0.10
+      installments_count = 13
     else:
       roi = 0.18
+      installments_count = 3
 
     success_tx_count = (
         len(df_tx[df_tx["status"] == "Success"]) if not df_tx.empty else 0
     )
     streak_bonus = 0.01 if success_tx_count >= 3 else 0.0
+
     effective_roi = roi + streak_bonus
     maturity = target + (target * effective_roi)
     fee = maturity * 0.02
     gst = fee * 0.18
     net_payout = maturity - fee - gst
     net_profit = net_payout - target
-    return maturity, fee, gst, net_payout, net_profit, streak_bonus
+    return (
+        maturity,
+        fee,
+        gst,
+        net_payout,
+        net_profit,
+        streak_bonus,
+        installments_count,
+    )
 
 
   def calculate_detailed_metrics(target, freq):
@@ -1144,12 +1156,34 @@ else:
       st.subheader("Configure AutoPay E-Mandate Frequency:")
       f_cols = st.columns(3)
       for i, (f_name, f_amt, f_roi) in enumerate(freqs):
+        (
+            maturity,
+            fee,
+            gst,
+            net_payout,
+            net_profit,
+            bonus,
+            total_installments,
+        ) = calculate_payout(target_amt, f_name)
         with f_cols[i]:
+          bonus_text = (
+              f" (+{bonus*100:.1f}% AI Streak Bonus)" if bonus > 0 else ""
+          )
           st.markdown(
               f"""
                     <div class="detail-card">
                         <h3 style='margin-bottom:0;'>{f_name} SIP</h3>
                         <p style='color: #cbd5e1;'>Deduction: <b>₹ {f_amt:,.2f}</b></p>
+                        <hr style='border-color: #047857;'>
+                        <p style='text-align: left; font-size: 13px; color: #f1f5f9;'>
+                            <b>Target Yield Est.:</b> {f_roi*100:.0f}%{bonus_text}<br>
+                            <b>Gross Maturity:</b> ₹ {maturity:,.2f}<br>
+                            <span style='color: #fbbf24;'><b>Tenure:</b> 3 Months</span><br>
+                            <span style='color: #fbbf24;'><b>Lock-in Period:</b> 1 Month</span><br>
+                            <b>Platform Fee + GST:</b> -₹ {fee+gst:,.2f}<br><br>
+                            <span style='color: #34d399; font-size: 15px;'><b>Est. Net Payout: ₹ {net_payout:,.2f}</b></span><br>
+                            <span style='color: #38bdf8; font-size: 14px;'><b>Total EMIs to Deduct: {total_installments} Installments</b></span>
+                        </p>
                     </div>
                     """,
               unsafe_allow_html=True,
@@ -1216,7 +1250,9 @@ else:
           st.success(
               f"✅ Target 100% Achieved for {p_name}! Maturity Option Unlocked."
           )
-          _, _, _, net_payout, _, _, _ = calculate_payout(p_target, p_freq)
+          maturity, fee, gst, net_payout, net_profit, _, _ = calculate_payout(
+              p_target, p_freq
+          )
 
           st.write(
               f"📅 **Target Completion Date:**"
